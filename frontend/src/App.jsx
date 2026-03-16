@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { createWebSocket, getHealth } from './api/sentinelApi'
+import Topbar from './components/Topbar'
 import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
 import ScanPage from './pages/ScanPage'
 import IncidentLog from './pages/IncidentLog'
+import RedTeam from './pages/RedTeam'
 import Settings from './pages/Settings'
 import './index.css'
 
@@ -65,16 +67,30 @@ export default function App() {
     }))
   }
 
-  const pages = { dashboard: Dashboard, scan: ScanPage, log: IncidentLog, settings: Settings }
+  const pages = { 
+    dashboard: Dashboard, 
+    scan: ScanPage, 
+    log: IncidentLog, 
+    redteam: RedTeam,
+    settings: Settings 
+  }
   const ActivePage = pages[page] || Dashboard
 
   return (
     <ThemeContext.Provider value={{ incidents, stats, wsConnected, addIncident, surgeAlert, setSurgeAlert, localMode, setLocalMode }}>
-      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-        <Sidebar current={page} onNavigate={setPage} wsConnected={wsConnected} localMode={localMode} />
-        <main style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
-          <ActivePage onNavigate={setPage} />
-        </main>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-primary)' }}>
+        <Topbar current={page} onNavigate={setPage} />
+        <div style={{ display: 'flex', flex: 1, marginTop: 60 /* Topbar height */ }}>
+          <Sidebar current={page} onNavigate={setPage} wsConnected={wsConnected} localMode={localMode} />
+          <main style={{ 
+            flex: 1, 
+            marginLeft: 220, /* Sidebar width */
+            padding: '40px 48px', 
+            minHeight: 'calc(100vh - 60px)',
+          }}>
+            <ActivePage onNavigate={setPage} />
+          </main>
+        </div>
       </div>
     </ThemeContext.Provider>
   )

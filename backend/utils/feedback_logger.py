@@ -68,14 +68,14 @@ def get_model_health_stats() -> dict:
 
     return {
         "total_feedback":     total,
-        "false_positive_rate": round(fp / total, 3),
-        "true_positive_rate":  round(tp / total, 3),
+        "false_positive_rate": round(float(fp) / float(total), 3), # type: ignore
+        "true_positive_rate":  round(float(tp) / float(total), 3), # type: ignore
         "pending_retraining":  fp + tp,
         "unsure_count":        un,
         # Calibration colour hint for the frontend
         "health_status": (
-            "healthy"   if fp / total < 0.1
-            else "warning" if fp / total < 0.25
+            "healthy"   if (float(fp) / float(total)) < 0.1
+            else "warning" if (float(fp) / float(total)) < 0.25
             else "degraded"
         ),
     }

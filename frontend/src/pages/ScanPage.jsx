@@ -1,13 +1,16 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useContext } from 'react'
+import { ThemeContext } from '../App'
 import { analyseInput, ingestFile } from '../api/sentinelApi'
 import SentinelGauge from '../components/SentinelGauge'
 import EvidenceCard from '../components/EvidenceCard'
 import ThreatBrief from '../components/ThreatBrief'
 import ActionPanel from '../components/ActionPanel'
+import { SectionHeader } from '../components/SectionHeader'
 
 const TABS = ['URL', 'Text / Email', 'File Upload', 'Log Paste']
 
-export default function ScanPage({ onNavigate }) {
+export default function ScanPage() {
+  const { addIncident } = useContext(ThemeContext)
   const [tab, setTab] = useState(0)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -27,6 +30,7 @@ export default function ScanPage({ onNavigate }) {
         res = await analyseInput(payload)
       }
       setResult(res)
+      if (res.incident_id) addIncident(res) // bubble to global context
     } catch (e) {
       setError(e.response?.data?.detail || e.message || 'Analysis failed. Is the backend running?')
     } finally {
@@ -35,101 +39,110 @@ export default function ScanPage({ onNavigate }) {
   }
 
   return (
-    <div>
-      <h1 style={{ fontFamily: 'DM Sans', fontSize: 24, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>
-        Analyse Threat
-      </h1>
-      <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 24 }}>
-        Submit any suspicious input for full multi-detector analysis.
-      </p>
+    <div className="page-enter" style={{ maxWidth: 1000, margin: '0 auto' }}>
+      <div style={{ marginBottom: 40 }}>
+        <SectionHeader number="02" title="Manual Analysis" subtitle="Submit isolated artifacts for full ensemble processing." />
+      </div>
 
       {/* Input panel */}
-      <div className="card" style={{ padding: 20, marginBottom: 24 }}>
+      <div className="card" style={{ padding: '0 0 20px', marginBottom: 40, overflow: 'hidden' }}>
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '1px solid #E5E7EB', paddingBottom: 4 }}>
-          {TABS.map((t, i) => (
-            <button key={t} onClick={() => { setTab(i); setInput(''); setResult(null) }} style={{
-              padding: '6px 14px', border: 'none', borderRadius: 6, cursor: 'pointer',
-              background: tab === i ? '#6366F1' : 'transparent',
-              color: tab === i ? '#fff' : '#6B7280',
-              fontSize: 13, fontWeight: tab === i ? 600 : 400,
-              transition: 'all 0.15s',
-            }}>{t}</button>
-          ))}
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
+          {TABS.map((t, i) => {
+            const active = tab === i
+            return (
+              <button key={t} onClick={() => { setTab(i); setInput(''); setResult(null); setError('') }} style={{
+                flex: 1, padding: '16px', border: 'none', cursor: 'pointer',
+                background: active ? 'var(--bg-primary)' : 'transparent',
+                borderBottom: active ? '2px solid var(--text-primary)' : '2px solid transparent',
+                color: active ? 'var(--text-primary)' : 'var(--text-muted)',
+                fontSize: 14, fontFamily: 'var(--font-body)', fontWeight: active ? 600 : 500,
+                transition: 'all 0.15s',
+              }}>{t}</button>
+            )
+          })}
         </div>
 
         {/* Input area */}
-        {tab === 2 ? (
-          <div style={{
-            border: '2px dashed #E5E7EB', borderRadius: 10, padding: 32,
-            textAlign: 'center', color: '#9CA3AF', cursor: 'pointer',
-          }} onClick={() => fileRef.current?.click()}>
-            <input ref={fileRef} type="file" style={{ display: 'none' }} accept=".jpg,.jpeg,.png,.mp4,.avi,.mov,.txt,.log" />
-            <div style={{ fontSize: 28 }}>📁</div>
-            <div style={{ fontSize: 14, marginTop: 8 }}>Click to upload image, video, or log file</div>
-            <div style={{ fontSize: 12, marginTop: 4 }}>JPG, PNG, MP4, AVI, TXT, LOG</div>
-          </div>
-        ) : (
-          <textarea
-            rows={tab === 0 ? 2 : 6}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder={
-              tab === 0 ? 'https://suspicious-site.xyz/login?verify=account' :
-              tab === 1 ? 'Paste suspicious email or message here…' :
-              'Paste auth.log / syslog lines here…'
-            }
-            style={{
-              width: '100%', padding: 12, border: '1px solid #E5E7EB',
-              borderRadius: 8, resize: 'vertical', fontSize: 13,
-              fontFamily: tab === 0 ? 'IBM Plex Mono' : 'Inter',
-              outline: 'none', background: '#FAFAFA', color: '#0F172A',
-              boxSizing: 'border-box',
-            }}
-            onFocus={e => e.target.style.borderColor = '#6366F1'}
-            onBlur={e => e.target.style.borderColor = '#E5E7EB'}
-          />
-        )}
+        <div style={{ padding: '24px 32px' }}>
+          {tab === 2 ? (
+            <div style={{
+              border: '2px dashed var(--border-strong)', borderRadius: 12, padding: '48px 32px',
+              textAlign: 'center', color: 'var(--text-secondary)', cursor: 'pointer',
+              background: 'var(--bg-sunken)', transition: 'border 0.2s',
+            }} 
+            onMouseOver={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+            onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border-strong)'}
+            onClick={() => fileRef.current?.click()}>
+              <input ref={fileRef} type="file" style={{ display: 'none' }} accept=".jpg,.jpeg,.png,.mp4,.avi,.mov,.txt,.log" />
+              <div style={{ fontSize: 32, marginBottom: 12 }}>📁</div>
+              <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text-primary)' }}>Select file to upload</div>
+              <div style={{ fontSize: 13, marginTop: 4, fontFamily: 'var(--font-mono)' }}>JPG, PNG, MP4, AVI, TXT, LOG</div>
+            </div>
+          ) : (
+            <textarea
+              rows={tab === 0 ? 2 : 8}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              placeholder={
+                tab === 0 ? 'https://suspicious-site.xyz/login?verify=account' :
+                tab === 1 ? 'Paste suspicious email, SMS, or Slack message here…' :
+                'Paste raw syslog or application log lines here…'
+              }
+              style={{
+                width: '100%', padding: '16px 20px', border: '1px solid var(--border)',
+                borderRadius: 8, resize: 'vertical', fontSize: 15,
+                fontFamily: tab === 0 ? 'var(--font-mono)' : 'var(--font-body)',
+                lineHeight: 1.6, outline: 'none', background: 'var(--bg-sunken)', color: 'var(--text-primary)',
+                transition: 'border 0.2s, box-shadow 0.2s',
+              }}
+            />
+          )}
 
-        <div style={{ marginTop: 12, display: 'flex', gap: 10, alignItems: 'center' }}>
-          <button onClick={handleAnalyse} disabled={loading || (tab !== 2 && !input.trim())} style={{
-            padding: '10px 28px', background: loading ? '#C7D2FE' : '#6366F1',
-            color: '#fff', border: 'none', borderRadius: 8, cursor: loading ? 'not-allowed' : 'pointer',
-            fontWeight: 600, fontSize: 14, transition: 'background 0.15s',
-          }}>
-            {loading ? 'Analysing…' : 'Analyse'}
-          </button>
-          {error && <span style={{ color: '#EF4444', fontSize: 13 }}>{error}</span>}
+          <div style={{ marginTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: 13, color: 'var(--critical)', fontWeight: 500 }}>{error}</div>
+            
+            <button className="btn-primary" onClick={handleAnalyse} disabled={loading || (tab !== 2 && !input.trim())}>
+              {loading ? (
+                <>
+                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                  Analysing…
+                </>
+              ) : (
+                <>
+                  <span>Run Analysis</span>
+                  <svg className="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Results */}
       {result && (
-        <div style={{ animation: 'fadeScaleIn 0.35s ease' }}>
-          {/* Score + brief top row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 20, marginBottom: 20 }}>
-            <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-              <SentinelGauge score={result.sentinel_score} severity={result.severity} animate={true} />
-              <div style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'center' }}>
-                <span className="mono">{result.incident_id}</span>
-              </div>
+        <div style={{ animation: 'pageIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+          <div style={{ borderTop: '1px solid var(--border)', margin: '40px 0', position: 'relative' }}>
+            <span style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-primary)', padding: '0 16px', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>ANALYSIS COMPLETE</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 32, marginBottom: 32 }}>
+            <div className="card" style={{ padding: '32px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em', fontWeight: 600, marginBottom: 24 }}>SENTINEL SCORE</div>
+              <SentinelGauge score={result.sentinel_score} severity={result.severity} />
             </div>
             <ThreatBrief incident={result} />
           </div>
 
-          {/* Action */}
-          <div style={{ marginBottom: 20 }}>
+          <div style={{ marginBottom: 32 }}>
             <ActionPanel recommended_action={result.recommended_action} severity={result.severity} />
           </div>
 
-          {/* Evidence */}
           {result.evidence && Object.keys(result.evidence).length > 0 && (
-            <div>
-              <h3 style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', marginBottom: 10 }}>
-                Detector Evidence
-              </h3>
-              <EvidenceCard evidence={result.evidence} detectors_triggered={result.detectors_triggered} />
-            </div>
+             <div style={{ marginBottom: 60 }}>
+                <SectionHeader number="04" title="Detector Evidence" subtitle="Telemetry from the internal ensemble" />
+                <EvidenceCard evidence={result.evidence} detectors_triggered={result.detectors_triggered} />
+             </div>
           )}
         </div>
       )}

@@ -1,71 +1,83 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 
-const COLORS = {
-  Clean: '#10B981', Suspicious: '#F59E0B',
-  'Likely Malicious': '#F97316', Critical: '#EF4444',
-}
+export default function SentinelGauge({ score }) {
+  const [animatedScore, setAnimatedScore] = useState(0)
 
-export default function SentinelGauge({ score = 0, severity = 'Clean', animate = true }) {
-  const circleRef = useRef(null)
-  const R = 70, C = 2 * Math.PI * R
-  const pct = Math.min(100, Math.max(0, score)) / 100
-  const color = COLORS[severity] || '#10B981'
+  // Arc geometry
+  const R = 75               // radius
+  const cx = 100, cy = 100   // center
+  const circumference = Math.PI * R   // half-circle arc
+  const offset = circumference * (1 - animatedScore / 100)
+
+  // Color selection
+  const colour = animatedScore <= 30 ? 'var(--clean)'
+               : animatedScore <= 60 ? 'var(--suspicious)'
+               : animatedScore <= 80 ? 'var(--likely)'
+               :                       'var(--critical)'
+
+  const label = animatedScore <= 30 ? 'Clean'
+              : animatedScore <= 60 ? 'Suspicious'
+              : animatedScore <= 80 ? 'Likely Malicious'
+              :                       'Critical'
 
   useEffect(() => {
-    if (!circleRef.current || !animate) return
-    circleRef.current.style.transition = 'none'
-    circleRef.current.style.strokeDashoffset = C
-    requestAnimationFrame(() => {
-      circleRef.current.style.transition = 'stroke-dashoffset 1.2s ease'
-      circleRef.current.style.strokeDashoffset = C - pct * C
-    })
-  }, [score, C, pct, animate])
+    // Count up animation
+    setAnimatedScore(0)
+    const duration = 1000 // ms
+    const startTime = performance.now()
+
+    const animate = (time) => {
+      const elapsed = time - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      // Ease out cubic
+      const ease = 1 - Math.pow(1 - progress, 3)
+      setAnimatedScore(Math.round(score * ease))
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      } else {
+        setAnimatedScore(score)
+      }
+    }
+    requestAnimationFrame(animate)
+  }, [score])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-      <svg width={180} height={180} style={{ transform: 'rotate(-90deg)' }}>
+    <div style={{ position: 'relative', width: 200, height: 120 }}>
+      <svg viewBox="0 0 200 120" width="200" height="120">
         {/* Track */}
-        <circle cx={90} cy={90} r={R} fill="none" stroke="#F1F5F9" strokeWidth={12} />
-        {/* Score arc */}
-        <circle
-          ref={circleRef}
-          cx={90} cy={90} r={R}
-          fill="none"
-          stroke={color}
-          strokeWidth={12}
+        <path
+          d={`M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`}
+          fill="none" stroke="var(--bg-sunken)" strokeWidth="12"
           strokeLinecap="round"
-          strokeDasharray={C}
-          strokeDashoffset={animate ? C : C - pct * C}
+        />
+        {/* Animated fill */}
+        <path
+          d={`M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`}
+          fill="none" stroke={colour} strokeWidth="12"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          style={{ transition: 'stroke 0.3s' }}
         />
         {/* Score text */}
-        <text
-          x={90} y={90}
-          textAnchor="middle" dominantBaseline="middle"
-          style={{ transform: 'rotate(90deg)', transformOrigin: '90px 90px' }}
-          fill={color}
-          fontSize={32}
-          fontWeight={700}
-          fontFamily="'IBM Plex Mono', monospace"
-        >
-          {score}
+        <text x={cx} y={cy - 12} textAnchor="middle"
+          style={{
+            fontFamily: 'var(--font-mono)', fontSize: 42,
+            fontWeight: 600, fill: 'var(--text-primary)',
+          }}>
+          {animatedScore}
         </text>
-        <text
-          x={90} y={112}
-          textAnchor="middle"
-          style={{ transform: 'rotate(90deg)', transformOrigin: '90px 112px' }}
-          fill="#94A3B8"
-          fontSize={11}
-          fontFamily="Inter"
-        >/ 100</text>
+        {/* Label text */}
+        <text x={cx} y={cy + 8} textAnchor="middle"
+          style={{
+            fontFamily: 'var(--font-body)', fontSize: 11,
+            fill: 'var(--text-muted)', letterSpacing: '0.08em',
+            textTransform: 'uppercase', fontWeight: 600,
+          }}>
+          {label}
+        </text>
       </svg>
-      <div style={{
-        padding: '4px 14px', borderRadius: 999,
-        background: color + '18', border: `1px solid ${color}40`,
-        color, fontSize: 13, fontWeight: 600, fontFamily: 'DM Sans',
-        animation: 'fadeScaleIn 0.4s ease',
-      }}>
-        {severity}
-      </div>
     </div>
   )
 }

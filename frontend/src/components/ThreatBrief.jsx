@@ -1,51 +1,51 @@
 import React from 'react'
-import MitreTag from './MitreTag'
+import { SectionHeader } from './SectionHeader'
 
 export default function ThreatBrief({ incident }) {
   if (!incident) return null
-  const { threat_brief, mitre_tactic, mitre_label, mitre_phase, coordination_multiplier, context_modifiers } = incident
+
+  // Find GPT explanation or fallback
+  const expl = incident.evidence?.nlp?.explanation
+            || incident.evidence?.aigen?.explanation
+            || incident.evidence?.url?.explanation
+            || incident.threat_brief
+            || "System detected anomalous patterns consistent with known threat vectors."
 
   return (
-    <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: '#9CA3AF', letterSpacing: '0.08em' }}>
-        AI THREAT BRIEF
-      </div>
+    <div className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column' }}>
+      <SectionHeader number="01" title="Threat Brief" subtitle="AI-Generated Context" />
+      
+      <div style={{ flex: 1 }}>
+        <p style={{
+          fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)',
+          margin: 0, fontFamily: 'var(--font-body)',
+        }}>
+          {expl}
+        </p>
 
-      <p style={{
-        fontSize: 14, color: '#1E293B', lineHeight: 1.7,
-        borderLeft: '3px solid #6366F1', paddingLeft: 12, margin: 0,
-      }}>
-        {threat_brief || 'Analysis complete. No summary generated.'}
-      </p>
-
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-        <MitreTag tactic_id={mitre_tactic} mitre_label={mitre_label} mitre_phase={mitre_phase} />
-
-        {coordination_multiplier > 1 && (
-          <span style={{
-            padding: '4px 10px', borderRadius: 6,
-            background: '#FFF7ED', border: '1px solid #FED7AA',
-            color: '#C2410C', fontSize: 11, fontWeight: 600,
-          }}>
-            ⚡ Coordination ×{coordination_multiplier}
-          </span>
+        {incident.mitre_label && (
+          <div style={{ marginTop: 24, padding: '16px', background: 'var(--bg-primary)', borderRadius: 8, border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600, letterSpacing: '0.04em' }}>MITRE ATT&CK CLASSIFICATION</div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--accent-dim)', color: 'var(--accent-hover)', padding: '6px 12px', borderRadius: 6, border: '1px solid var(--accent)20' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600 }}>{incident.mitre_label}</span>
+            </div>
+            {incident.primary_threat && (
+              <div style={{ marginTop: 8, fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>
+                {incident.primary_threat}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
-      {context_modifiers?.length > 0 && (
-        <div>
-          <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 6 }}>CONTEXT SIGNALS ACTIVE</div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {context_modifiers.map(m => (
-              <span key={m} style={{
-                padding: '2px 8px', borderRadius: 4,
-                background: '#FEF2F2', color: '#9B1C1C',
-                fontSize: 11, fontFamily: 'IBM Plex Mono',
-              }}>{m.replace(/_/g, ' ')}</span>
-            ))}
-          </div>
-        </div>
-      )}
+      <div style={{
+        marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border)',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)'
+      }}>
+        <span>ID: {incident.incident_id}</span>
+        <span>Source: {incident.ingestion_source}</span>
+      </div>
     </div>
   )
 }

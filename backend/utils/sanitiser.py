@@ -26,7 +26,7 @@ def sanitise_text_input(raw: str) -> str:
     # Remove null bytes (can cause downstream issues)
     clean = clean.replace("\x00", "")
     # Truncate to 10 000 chars — prevents DoS via enormous payloads
-    return clean[:10_000].strip()
+    return clean[:10000].strip()
 
 
 def sanitise_url_input(raw: str) -> str:
@@ -40,7 +40,7 @@ def sanitise_url_input(raw: str) -> str:
     # Allow only RFC-3986 characters
     clean = re.sub(r"[^\w\-._~:/?#\[\]@!$&'()*+,;=%]", "", raw)
     # Truncate to 2 048 chars — standard browser limit
-    return clean[:2_048].strip()
+    return clean[:2048].strip()
 
 
 def sanitise_log_input(raw: str) -> str:
@@ -51,4 +51,4 @@ def sanitise_log_input(raw: str) -> str:
         raw = str(raw)
     # Remove null bytes
     clean = raw.replace("\x00", "")
-    return clean[:50_000].strip()
+    return clean[:50000].strip()
