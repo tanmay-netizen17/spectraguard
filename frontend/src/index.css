@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #FAFAFA;
+  --surface: #FFFFFF;
+  --border: #E5E7EB;
+  --text-primary: #0F172A;
+  --text-secondary: #6B7280;
+  --accent: #6366F1;
+  --clean: #10B981;
+  --suspicious: #F59E0B;
+  --likely: #F97316;
+  --critical: #EF4444;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4 { font-family: 'DM Sans', sans-serif; }
+
+code, .mono { font-family: 'IBM Plex Mono', monospace; }
+
+/* Severity colours */
+.sev-Clean        { color: var(--clean); }
+.sev-Suspicious   { color: var(--suspicious); }
+.sev-Likely       { color: var(--likely); }
+.sev-Critical     { color: var(--critical); }
+
+.bg-sev-Clean     { background: #F0FDF4; border-color: var(--clean); }
+.bg-sev-Suspicious{ background: #FFFBEB; border-color: var(--suspicious); }
+.bg-sev-Likely    { background: #FFF7ED; border-color: var(--likely); }
+.bg-sev-Critical  { background: #FEF2F2; border-color: var(--critical); }
+
+/* Card */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+/* Animations */
+@keyframes slideInRight {
+  from { transform: translateX(24px); opacity: 0; }
+  to   { transform: translateX(0);   opacity: 1; }
+}
+@keyframes fadeScaleIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(1.4); }
+}
+
+.animate-slide-in  { animation: slideInRight 0.35s ease both; }
+.animate-fade-in   { animation: fadeScaleIn 0.3s ease both; }
+
+.pulse-dot {
+  width: 8px; height: 8px;
+  background: var(--clean);
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulseDot 2s ease-in-out infinite;
+}

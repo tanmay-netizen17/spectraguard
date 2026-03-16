@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_APP_PASSWORD=${EMAIL_APP_PASSWORD}
+      - SENTINEL_SECRET_KEY=${SENTINEL_SECRET_KEY}
+    volumes:
+      - ./backend/models:/app/models
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
