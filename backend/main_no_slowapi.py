@@ -17,11 +17,10 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import uvicorn
 
-# Rate limiting
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from starlette.middleware.base import BaseHTTPMiddleware
+# from slowapi import Limiter, _rate_limit_exceeded_handler
+# from slowapi.util import get_remote_address
+# from slowapi.errors import RateLimitExceeded
+# from starlette.middleware.base import BaseHTTPMiddleware
 
 from orchestrator import Orchestrator
 from utils.mitre_mapper import mitre_mapper
@@ -43,9 +42,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-limiter = Limiter(key_func=get_remote_address)
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# limiter = Limiter(key_func=get_remote_address)
+# app.state.limiter = limiter
+# app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 orchestrator = Orchestrator()
 sanitiser = Sanitiser()
@@ -125,7 +124,7 @@ class AnalyseRequest(BaseModel):
     source: Optional[str] = "manual"
 
 @app.post("/analyse")
-@limiter.limit("50/minute")
+# @limiter.limit("50/minute")
 async def analyse_threat(request: AnalyseRequest, background_tasks: BackgroundTasks):
     start_time = datetime.now()
     

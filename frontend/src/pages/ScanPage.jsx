@@ -21,18 +21,41 @@ export default function ScanPage() {
   const handleAnalyse = async () => {
     setError(''); setResult(null); setLoading(true)
     try {
-      let res
-      if (tab === 2 && fileRef.current?.files[0]) {
-        res = await ingestFile(fileRef.current.files[0])
+      if (tab === 2) {
+        if (!fileRef.current?.files[0]) return
+
+        const formData = new FormData()
+        formData.append('file', fileRef.current.files[0])
+        formData.append('source', 'manual')
+
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/analyse/file`,
+          {
+            method: 'POST',
+            body: formData,
+            // DO NOT set Content-Type header — browser sets it automatically
+          }
+        )
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}))
+          throw new Error(err.error || `HTTP ${response.status}`)
+        }
+
+        const data = await response.json()
+        if (data.error) throw new Error(data.error)
+        
+        setResult(data)
+        if (data.incident_id) addIncident(data)
       } else {
         const type = tab === 0 ? 'url' : tab === 3 ? 'log' : 'text'
         const payload = { type, content: input }
-        res = await analyseInput(payload)
+        const res = await analyseInput(payload)
+        setResult(res)
+        if (res.incident_id) addIncident(res) // bubble to global context
       }
-      setResult(res)
-      if (res.incident_id) addIncident(res) // bubble to global context
     } catch (e) {
-      setError(e.response?.data?.detail || e.message || 'Analysis failed. Is the backend running?')
+      setError(e.message || e.response?.data?.detail || 'Analysis failed. Is the backend running?')
     } finally {
       setLoading(false)
     }
@@ -74,7 +97,7 @@ export default function ScanPage() {
             onMouseOver={e => e.currentTarget.style.borderColor = 'var(--accent)'}
             onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border-strong)'}
             onClick={() => fileRef.current?.click()}>
-              <input ref={fileRef} type="file" style={{ display: 'none' }} accept=".jpg,.jpeg,.png,.mp4,.avi,.mov,.txt,.log" />
+              <input ref={fileRef} type="file" style={{ display: 'none' }} accept=".jpg,.jpeg,.png,.mp4,.avi,.mov,.txt,.log,.webp" />
               <div style={{ fontSize: 32, marginBottom: 12 }}>📁</div>
               <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text-primary)' }}>Select file to upload</div>
               <div style={{ fontSize: 13, marginTop: 4, fontFamily: 'var(--font-mono)' }}>JPG, PNG, MP4, AVI, TXT, LOG</div>
@@ -135,7 +158,11 @@ export default function ScanPage() {
           </div>
 
           <div style={{ marginBottom: 32 }}>
-            <ActionPanel recommended_action={result.recommended_action} severity={result.severity} />
+            <ActionPanel 
+              recommended_action={result.recommended_action} 
+              severity={result.severity} 
+              result={result}
+            />
           </div>
 
           {result.evidence && Object.keys(result.evidence).length > 0 && (

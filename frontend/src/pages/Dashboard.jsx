@@ -79,23 +79,49 @@ export default function Dashboard({ onNavigate }) {
       {/* Surge Alert */}
       {surgeAlert && (
         <div style={{
-          padding: '16px 24px', background: 'var(--critical-dim)', border: '1px solid var(--critical)',
-          borderRadius: 8, display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32,
-          animation: 'pulseDot 2s ease-in-out infinite'
+          margin:       '0 0 20px 0',
+          padding:      '14px 20px',
+          background:   'linear-gradient(135deg, #FEF2F2 0%, #FFF5F5 100%)',
+          border:       '1px solid #FECDCA',
+          borderLeft:   '4px solid #F04438',
+          borderRadius: 10,
+          display:      'flex',
+          alignItems:   'center',
+          justifyContent: 'space-between',
+          animation:    'slideDown 0.4s ease-out',
         }}>
-          <span style={{ color: 'var(--critical)', fontWeight: 600, fontSize: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-            {surgeAlert.message}
-          </span>
-          <button 
-            onClick={() => setSurgeAlert(null)} 
-            style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: 'var(--critical)', cursor: 'pointer', fontSize: 16, padding: 4 }}
-          >✕</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{
+              width: 10, height: 10, borderRadius: '50%',
+              background: '#F04438',
+              display: 'inline-block',
+              animation: 'pulse-critical 1.5s infinite',
+              flexShrink: 0,
+            }}/>
+            <div>
+              <span style={{ fontWeight: 700, fontSize: 14, color: '#B42318' }}>
+                SURGE DETECTED
+              </span>
+              <span style={{ fontSize: 14, color: '#7F1D1D', marginLeft: 8 }}>
+                {surgeAlert.message || `${stats.critical} critical threats detected recently`}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => setSurgeAlert(null)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#B42318', fontSize: 18, lineHeight: 1,
+              padding: '0 4px', flexShrink: 0,
+            }}
+          >
+            ×
+          </button>
         </div>
       )}
 
       {/* Stats Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 24, marginBottom: 40 }}>
+      <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 24, marginBottom: 40 }}>
         <StatCard label="Total Scans" mainValue={todayScans.toLocaleString()} subLabel="Today so far" secondaryValue={`↑ ${stats.total} live`} />
         <StatCard label="Critical Threats" mainValue={criticalToday} subLabel="Last 1 hour" secondaryValue={`+${stats.critical}`} isCritical={criticalToday > 0} />
         <StatCard label="Automated Blocks" mainValue={blockedWeek} subLabel="This week" secondaryValue="99.9% success" />
@@ -129,7 +155,7 @@ export default function Dashboard({ onNavigate }) {
       </div>
 
       {/* Main 2-Col Split */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 24 }}>
+      <div className="dashboard-split" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 24 }}>
         
         {/* Left: Feed */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>

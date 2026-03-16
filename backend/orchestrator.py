@@ -1,6 +1,6 @@
 # pyre-ignore-all-errors
 """
-SentinelAI — Orchestrator
+SentinelAI - Orchestrator
 Routes each incoming payload to the correct set of detectors (local or cloud),
 then fuses results and attaches XAI explanations.
 """
@@ -63,7 +63,7 @@ class Orchestrator:
         detector_results = {}
         tasks = []
 
-        # ── Fan-out based on what's provided ──────────────────────────────────
+        # -- Fan-out based on what's provided ----------------------------------
 
         # URL analysis
         if url:
@@ -72,18 +72,18 @@ class Orchestrator:
             else:
                 tasks.append(("url", self.url.score(url)))
 
-        # NLP — phishing, prompt injection, AI-generated content
+        # NLP - phishing, prompt injection, AI-generated content
         if text:
             if self.local_mode:
                 tasks.append(("nlp", self.local_nlp.analyse(text)))
             else:
                 tasks.append(("nlp", self.nlp.analyse(text)))
 
-        # Behaviour anomaly — from log data
+        # Behaviour anomaly - from log data
         if log_data:
             tasks.append(("anomaly", self.anomaly.detect(log_data)))
 
-        # Deepfake — file-based
+        # Deepfake - file-based
         if file_bytes and filename:
             tasks.append(("deepfake", self.deepfake.analyse(file_bytes, filename)))
 
@@ -100,7 +100,7 @@ class Orchestrator:
             else:
                 detector_results[name] = result
 
-        # ── Gather context signals for ContextModifier ─────────────────────
+        # -- Gather context signals for ContextModifier ---------------------
         context_signals = {
             "domain_age_new": False,
             "spf_dkim_fail": False,
@@ -126,10 +126,10 @@ class Orchestrator:
         hour = datetime.now(timezone.utc).hour
         context_signals["after_hours"] = hour < 7 or hour > 20  # outside 7am-8pm UTC
 
-        # ── Fusion Engine — compute Sentinel Score ─────────────────────────
+        # -- Fusion Engine - compute Sentinel Score -------------------------
         fusion_result = self.fusion.compute(detector_results, context_signals)
 
-        # ── XAI — generate explanations ───────────────────────────────────
+        # -- XAI - generate explanations -----------------------------------
         evidence = {}
         for det_name, det_result in detector_results.items():
             if det_result.get("score", 0) > 0.1:
@@ -141,11 +141,11 @@ class Orchestrator:
             severity=fusion_result["severity"],
         )
 
-        # ── MITRE mapping ─────────────────────────────────────────────────
+        # -- MITRE mapping -------------------------------------------------
         primary_threat = self._identify_primary_threat(detector_results, url, text, log_data, file_bytes)
         mitre_info = mitre_mapper.get_mapping(primary_threat)
 
-        # ── Recommended action ─────────────────────────────────────────────
+        # -- Recommended action ---------------------------------------------
         action = self.responder.recommend(
             severity=fusion_result["severity"],
             threat_type=primary_threat,

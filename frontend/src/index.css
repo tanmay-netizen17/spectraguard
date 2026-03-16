@@ -249,3 +249,43 @@ input:focus, textarea:focus {
   from { opacity: 0; transform: translateX(8px); }
   to   { opacity: 1; transform: translateX(0); }
 }
+
+/* ── Mobile Responsiveness ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .stats-grid { 
+    grid-template-columns: repeat(2, 1fr) !important; 
+    gap: 12px !important;
+  }
+  .dashboard-split { 
+    grid-template-columns: 1fr !important; 
+  }
+  main {
+    padding: 16px 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { 
+    grid-template-columns: 1fr !important;
+  }
+  .action-buttons button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── Toast Animation ────────────────────────────────────────────────── */
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

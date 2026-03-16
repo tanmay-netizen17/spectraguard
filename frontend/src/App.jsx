@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { Routes, Route, useNavigate } from 'react-router-dom'
 import { ModeProvider, useMode } from './context/ModeContext'
 import { useLiveFeed } from './hooks/useLiveFeed'
 import Topbar from './components/Topbar'
@@ -14,8 +15,21 @@ import './index.css'
 
 export const ThemeContext = React.createContext({})
 
-function AppContent() {
-  const [page, setPage] = useState('dashboard')
+function AppInner() {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isMobile,    setIsMobile]    = useState(window.innerWidth < 768)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    function handleResize() {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      if (!mobile) setSidebarOpen(false)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   const { incidents, status, stats, surgeAlert, setIncidents, setStats } = useLiveFeed()
   const { mode, localServerOnline } = useMode()
   
@@ -40,31 +54,32 @@ function AppContent() {
     }))
   }
 
-  const pages = { 
-    dashboard: Dashboard, 
-    scan: ScanPage, 
-    log: IncidentLog, 
-    redteam: RedTeam,
-    settings: Settings 
-  }
-  const ActivePage = pages[page] || Dashboard
-
   return (
     <ThemeContext.Provider value={{ incidents, stats, wsConnected, addIncident, surgeAlert, localMode }}>
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-primary)' }}>
-        <Topbar current={page} onNavigate={setPage} />
-        <div style={{ display: 'flex', flex: 1, marginTop: 60 /* Topbar height */ }}>
-          <Sidebar current={page} onNavigate={setPage} wsConnected={wsConnected} localMode={localMode} />
-          <main style={{ 
-            flex: 1, 
-            marginLeft: 220, /* Sidebar width */
-            padding: '40px 48px', 
-            minHeight: 'calc(100vh - 60px)',
-          }}>
-            <ActivePage onNavigate={setPage} />
-          </main>
-        </div>
-      </div>
+      <Topbar
+        onHamburgerClick={() => setSidebarOpen(true)}
+        isMobile={isMobile}
+      />
+      <Sidebar
+        mobileOpen={sidebarOpen || !isMobile}
+        onClose={() => setSidebarOpen(false)}
+      />
+      <main style={{
+        marginLeft:  isMobile ? 0    : 220,
+        marginTop:   60,
+        padding:     isMobile ? '16px 12px' : '24px 32px',
+        minHeight:   'calc(100vh - 60px)',
+        transition:  'margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
+        overflowX:   'hidden',
+      }}>
+        <Routes>
+          <Route path="/"              element={<Dashboard onNavigate={navigate} />} />
+          <Route path="/scan"          element={<ScanPage />} />
+          <Route path="/incidents"     element={<IncidentLog />} />
+          <Route path="/red-team"      element={<RedTeam />} />
+          <Route path="/settings"      element={<Settings />} />
+        </Routes>
+      </main>
       <AlertToast />
     </ThemeContext.Provider>
   )
@@ -73,7 +88,7 @@ function AppContent() {
 export default function App() {
   return (
     <ModeProvider>
-      <AppContent />
+      <AppInner />
     </ModeProvider>
   )
 }
