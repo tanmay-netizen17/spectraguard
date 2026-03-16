@@ -22,8 +22,8 @@ export default function ScanPage({ onNavigate }) {
       if (tab === 2 && fileRef.current?.files[0]) {
         res = await ingestFile(fileRef.current.files[0])
       } else {
-        const payload = tab === 0 ? { url: input } :
-                        tab === 3 ? { log_data: input } : { text: input }
+        const type = tab === 0 ? 'url' : tab === 3 ? 'log' : 'text'
+        const payload = { type, content: input }
         res = await analyseInput(payload)
       }
       setResult(res)

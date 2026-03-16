@@ -89,8 +89,12 @@ class Orchestrator:
 
         if url and "url" in detector_results:
             url_r = detector_results["url"]
-            context_signals["domain_age_new"] = url_r.get("domain_age_days", 999) < 7
+            context_signals["domain_age_new"] = 0 <= url_r.get("domain_age_days", 999) < 7
             context_signals["digit_substitution"] = url_r.get("has_digit_substitution", False)
+            # New signals from url_detector v2.0
+            context_signals["homoglyph_spoofing"] = url_r.get("has_homoglyph", False)
+            context_signals["idn_domain"] = url_r.get("is_idn", False)
+            context_signals["dangerous_scheme"] = url_r.get("dangerous_scheme", False)
 
         if email_headers:
             spf = str(email_headers.get("received-spf", "")).lower()
@@ -126,6 +130,12 @@ class Orchestrator:
             evidence=evidence,
         )
 
+        # Extract risk_category from URL detector if available
+        url_risk_category = (
+            detector_results.get("url", {}).get("risk_category", "")
+            if "url" in detector_results else ""
+        )
+
         return {
             "incident_id": "",  # filled by caller
             "sentinel_score": fusion_result["sentinel_score"],
@@ -139,8 +149,11 @@ class Orchestrator:
             "mitre_tactic": mitre_info.get("tactic_id", ""),
             "mitre_label": mitre_info.get("tactic_name", ""),
             "mitre_phase": mitre_info.get("phase", ""),
+            "mitre_description": mitre_info.get("description", ""),
+            "mitre_mitigations": mitre_info.get("mitigations", []),
             "recommended_action": action,
             "primary_threat": primary_threat,
+            "url_risk_category": url_risk_category,
             "auto_detected": source != "manual",
             "ingestion_source": source,
             "timestamp": datetime.now(timezone.utc).isoformat(),

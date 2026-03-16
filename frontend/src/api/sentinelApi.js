@@ -18,8 +18,17 @@ export const ingestFile = (file) => {
 }
 
 export const createWebSocket = (onMessage, onClose) => {
-  const wsBase = (import.meta.env.VITE_WS_URL || 'ws://localhost:8000').replace(/\/+$/, '')
-  const ws = new WebSocket(`${wsBase}/ws/live`)
+  // In dev mode: use relative path so it routes through the Vite proxy (127.0.0.1).
+  // In production: use VITE_WS_URL env variable.
+  const envWs = import.meta.env.VITE_WS_URL
+  let wsUrl
+  if (envWs) {
+    wsUrl = `${envWs.replace(/\/+$/, '')}/ws/live`
+  } else {
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    wsUrl = `${proto}//${window.location.host}/ws/live`
+  }
+  const ws = new WebSocket(wsUrl)
   ws.onmessage = (e) => { try { onMessage(JSON.parse(e.data)) } catch {} }
   ws.onclose   = () => onClose && onClose()
   ws.onerror   = () => ws.close()

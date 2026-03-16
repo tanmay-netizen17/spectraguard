@@ -121,31 +121,57 @@ class XAISynthesiser:
         shap_values = XAISynthesiser._compute_shap_values(r.get("all_features", {}))
         return {
             "score": r.get("score", 0),
+            "url": r.get("url", ""),
+            "normalised_url": r.get("normalised_url", ""),
             "domain_age_days": r.get("domain_age_days", -1),
             "entropy": r.get("entropy", 0),
+            "risk_category": r.get("risk_category", ""),
             "top_features": top_features,
             "shap_values": shap_values,
+            # Boolean flags — v1 + v2 keys
             "has_digit_substitution": r.get("has_digit_substitution", False),
             "is_ip_address": r.get("is_ip_address", False),
             "uses_shortener": r.get("uses_shortener", False),
+            "has_homoglyph": r.get("has_homoglyph", False),
+            "is_idn": r.get("is_idn", False),
+            "dangerous_scheme": r.get("dangerous_scheme", False),
+            "suspicious_tld": r.get("suspicious_tld", False),
+            "has_at_in_url": r.get("has_at_in_url", False),
             "explanation": XAISynthesiser._url_explain(r),
         }
 
     @staticmethod
     def _url_explain(r: dict) -> str:
         parts = []
+        if r.get("dangerous_scheme"):
+            parts.append("dangerous URL scheme (e.g. javascript:, data:)")
         if r.get("is_ip_address"):
-            parts.append("IP address instead of domain name")
+            parts.append("raw IP address used instead of domain name")
+        if r.get("has_homoglyph"):
+            parts.append("Unicode homoglyph spoofing detected (visually identical but different characters)")
+        if r.get("is_idn"):
+            parts.append("Internationalized Domain Name (IDN / Punycode) — potential visual spoofing")
         if r.get("has_digit_substitution"):
-            parts.append("digit-for-letter substitution (e.g. g00gle)")
+            parts.append("digit-for-letter substitution (e.g. g00gle, payp4l)")
         if r.get("uses_shortener"):
-            parts.append("URL shortener masking destination")
+            parts.append("URL shortener masking the true destination")
+        if r.get("suspicious_tld"):
+            parts.append("suspicious top-level domain often abused in phishing")
+        if r.get("has_at_in_url"):
+            parts.append("@ sign in URL — browser may redirect to a different host")
         age = r.get("domain_age_days", -1)
         if 0 <= age < 7:
-            parts.append(f"domain only {age} days old")
+            parts.append(f"domain registered only {age} day(s) ago")
+        elif 0 <= age < 30:
+            parts.append(f"recently registered domain ({age} days old)")
+        risk_cat = r.get("risk_category", "")
         if parts:
-            return f"URL flagged for: {'; '.join(parts)}."
-        return f"URL scored {r.get('score', 0):.0%} malicious by feature analysis."
+            suffix = f" [Risk category: {risk_cat}]" if risk_cat else ""
+            return f"URL flagged for: {'; '.join(parts)}.{suffix}"
+        return (
+            f"URL scored {r.get('score', 0):.0%} malicious by lexical feature analysis"
+            + (f" [{risk_cat}]" if risk_cat else ".")
+        )
 
     @staticmethod
     def _deepfake_evidence(r: dict) -> dict:
@@ -213,20 +239,32 @@ class XAISynthesiser:
     def _compute_shap_values(features: dict) -> list[dict]:
         """
         Compute SHAP-style feature importance for URL features.
-        Uses pre-computed weights as proxy when model unavailable.
+        Uses calibrated proxy weights (aligned with v2.0 feature set).
+        Negative weights denote features that *reduce* risk.
         """
-        # Proxy SHAP weights (trained feature importance values)
         importance_weights = {
-            "is_ip_address": 0.35,
-            "has_digit_sub": 0.28,
-            "has_at_in_url": 0.22,
-            "uses_shortener": 0.20,
-            "suspicious_tld": 0.18,
-            "domain_has_phishing_kw": 0.15,
-            "url_entropy": 0.12,
-            "num_subdomains": 0.10,
-            "is_https": -0.08,  # Negative: HTTPS reduces risk
-            "redirect_count": 0.09,
+            # High-certainty hard signals
+            "dangerous_scheme":         0.40,
+            "is_ip_address":            0.35,
+            "has_homoglyph":            0.32,
+            "has_digit_sub":            0.28,
+            "has_double_ext":           0.25,
+            "has_at_in_url":            0.22,
+            "is_idn":                   0.20,
+            "uses_shortener":           0.20,
+            "suspicious_tld":           0.18,
+            # Medium signals
+            "domain_has_phishing_kw":   0.15,
+            "has_b64_payload":          0.13,
+            "url_entropy":              0.12,
+            "redirect_count":           0.10,
+            "has_hex_encoding":         0.09,
+            "num_subdomains":           0.08,
+            # Soft contextual
+            "url_length":               0.02,
+            "hyphen_ratio_domain":      0.06,
+            # Risk-reducing
+            "is_https":                -0.08,
         }
         results = []
         for feat, weight in importance_weights.items():
@@ -238,7 +276,7 @@ class XAISynthesiser:
                 "shap_value": round(contribution, 4),
             })
         results.sort(key=lambda x: abs(x["shap_value"]), reverse=True)
-        return results[:10]
+        return results[:12]
 
     @staticmethod
     def _generate_fallback_brief(evidence: dict, score: int, severity: str) -> str:

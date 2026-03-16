@@ -49,11 +49,14 @@ MAX_COORDINATION_KEY = 3  # Keys above this use the same multiplier as key=3
 # Environmental signals that independently raise threat probability.
 # Additive, capped at +0.20 total.
 CONTEXT_MODIFIER_MAP: dict[str, float] = {
-    "domain_age_new":   0.08,  # Domain registered < 7 days ago
-    "spf_dkim_fail":    0.06,  # Email SPF/DKIM authentication failure
+    "domain_age_new":     0.08,  # Domain registered < 7 days ago
+    "spf_dkim_fail":      0.06,  # Email SPF/DKIM authentication failure
     "digit_substitution": 0.05,  # URL contains digit-for-letter substitutions (e.g. g00gle.com)
-    "new_geo":          0.07,  # First-time login from unrecognised geographic location
-    "after_hours":      0.04,  # Access during unusual hours (outside 7am–8pm UTC)
+    "new_geo":            0.07,  # First-time login from unrecognised geographic location
+    "after_hours":        0.04,  # Access during unusual hours (outside 7am–8pm UTC)
+    "homoglyph_spoofing": 0.07,  # Unicode homoglyph characters used in domain (e.g. Cyrillic 'а')
+    "idn_domain":         0.05,  # Internationalised Domain Name / Punycode detected
+    "dangerous_scheme":   0.09,  # Dangerous URL scheme (javascript:, data:, vbscript:)
 }
 CONTEXT_MODIFIER_CAP = 0.20  # Max additional risk from context alone
 
