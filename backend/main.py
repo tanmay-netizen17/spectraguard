@@ -6,14 +6,20 @@ Handles all HTTP + WebSocket endpoints for the cyber-defense platform.
 import asyncio
 import json
 import uuid
+import subprocess
+import os
+import sys
 from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 import uvicorn
+import asyncio
+import json
+import uuid
 
 # Rate limiting
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -65,11 +71,43 @@ orchestrator = Orchestrator()
 
 # In-memory incident store
 incident_store: dict[str, dict] = {}
-# Active WebSocket connections
-ws_clients: list[WebSocket] = []
+
+# Connection manager
+class ConnectionManager:
+    def __init__(self):
+        self.active: list[WebSocket] = []
+
+    async def connect(self, ws: WebSocket):
+        await ws.accept()
+        self.active.append(ws)
+
+    def disconnect(self, ws: WebSocket):
+        if ws in self.active:
+            self.active.remove(ws)
+
+    async def broadcast(self, data: dict):
+        dead = []
+        for ws in self.active:
+            try:
+                await ws.send_text(json.dumps(data))
+            except Exception:
+                dead.append(ws)
+        for ws in dead:
+            self.disconnect(ws)
+
+manager = ConnectionManager()
+
+# Simple in-memory agent registry
+agent_registry = {
+    "browser_extension": {"status": "offline", "last_seen": None},
+    "email_daemon":       {"status": "offline", "last_seen": None},
+    "log_collector":      {"status": "offline", "last_seen": None},
+}
 
 
 # ── Request models ─────────────────────────────────────────────────────────────
+from typing import Optional, List, Set, Dict, Any, Union, Literal
+
 class AnalyseRequest(BaseModel):
     url: Optional[str] = None
     text: Optional[str] = None
@@ -101,6 +139,16 @@ class SettingsModeRequest(BaseModel):
 class SettingsThresholdRequest(BaseModel):
     threshold: float
 
+class AgentStartRequest(BaseModel):
+    config: dict
+
+# ── Active Python Subprocesses ────────────────────────────────────────────────
+import subprocess
+import os
+import sys
+
+active_agents = {}
+
 # ── Helpers ────────────────────────────────────────────────────────────────────
 def make_incident_id() -> str:
     now = datetime.now(timezone.utc)
@@ -116,27 +164,15 @@ async def process_and_broadcast(incident: dict):
     # Check surge
     surge_status = check_surge(score)
     if surge_status.get("surge"):
-        asyncio.create_task(broadcast_msg(surge_status))
+        asyncio.create_task(manager.broadcast(surge_status))
 
     # Audit config
     raw_input = json.dumps(incident.get("evidence", {}))
     log_scan(incident.get("ingestion_source", "manual"), raw_input, incident)
     
-    # Broadcast incident if above threshold
-    if score >= orchestrator.threshold:
-        asyncio.create_task(broadcast_msg(incident))
+    # Broadcast incident
+    asyncio.create_task(manager.broadcast(incident))
     return incident
-
-async def broadcast_msg(msg: dict):
-    """Push new msg to all connected WebSocket clients."""
-    dead = []
-    for client in ws_clients:
-        try:
-            await client.send_text(json.dumps(msg))
-        except Exception:
-            dead.append(client)
-    for c in dead:
-        ws_clients.remove(c)
 
 
 # ── Core analysis endpoint ─────────────────────────────────────────────────────
@@ -158,7 +194,76 @@ async def analyse(request: Request, req: AnalyseRequest):
     return JSONResponse(content=incident)
 
 
-# ── Ingestion endpoints (from passive agents) ──────────────────────────────────
+# In-memory trusted domains (loaded from settings)
+trusted_domains_extra: set = set()
+
+@app.post("/settings/trusted-domains")
+async def update_trusted_domains(payload: dict):
+    global trusted_domains_extra
+    trusted_domains_extra = set(payload.get("domains", []))
+    return {"updated": len(trusted_domains_extra)}
+
+@app.get("/settings/trusted-domains")
+async def get_trusted_domains():
+    return {"domains": list(trusted_domains_extra)}
+
+# ── SSE Alert stream ──────────────────────────────────────────────────────────
+# Clients subscribe to GET /alerts/stream (Server-Sent Events)
+# Backend pushes alerts via POST /alerts/push (from email daemon)
+
+alert_queues: list[asyncio.Queue] = []
+
+@app.get("/alerts/stream")
+async def alert_stream(request: Request):
+    """SSE endpoint — frontend subscribes here for real-time alerts."""
+    queue = asyncio.Queue()
+    alert_queues.append(queue)
+
+    async def event_generator():
+        try:
+            # Send connected confirmation
+            yield f"data: {json.dumps({'type': 'connected'})}\n\n"
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    alert = await asyncio.wait_for(queue.get(), timeout=30)
+                    yield f"data: {json.dumps(alert)}\n\n"
+                except asyncio.TimeoutError:
+                    # Keepalive ping
+                    yield f"data: {json.dumps({'type': 'ping'})}\n\n"
+        finally:
+            if queue in alert_queues:
+                alert_queues.remove(queue)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
+@app.post("/alerts/push")
+async def push_alert(payload: dict):
+    """Called by email daemon / browser extension when threat detected."""
+    alert = {
+        "type":        payload.get("type", "threat"),
+        "severity":    payload.get("severity", "Suspicious"),
+        "score":       payload.get("score", 0),
+        "from":        payload.get("from", ""),
+        "subject":     payload.get("subject", ""),
+        "incident_id": payload.get("incident_id", ""),
+        "timestamp":   datetime.now(timezone.utc).isoformat(),
+        "id":          str(uuid.uuid4())[:8],
+    }
+    # Push to all subscribed SSE clients
+    for q in alert_queues:
+        await q.put(alert)
+    return {"pushed": len(alert_queues), "alert_id": alert["id"]}
+
+
 @app.post("/ingest/url")
 @limiter.limit("100/minute")
 async def ingest_url(request: Request, req: URLIngestRequest):
@@ -169,16 +274,24 @@ async def ingest_url(request: Request, req: URLIngestRequest):
     return JSONResponse(content=incident)
 
 @app.post("/ingest/email")
-@limiter.limit("30/minute")
-async def ingest_email(request: Request, req: EmailIngestRequest):
-    subject = sanitise_text_input(req.subject)
-    sender = sanitise_text_input(req.sender)
-    body = sanitise_text_input(req.body)
-    combined_text = f"Subject: {subject}\\nFrom: {sender}\\n\\n{body}"
-    incident = await orchestrator.run(text=combined_text, source="email_daemon", email_headers=req.headers)
-    incident["incident_id"] = make_incident_id()
-    await process_and_broadcast(incident)
-    return JSONResponse(content=incident)
+async def ingest_email(payload: dict):
+    score = payload.get("sentinel_score", 0)
+
+    # HARD THRESHOLD — do not save clean emails as incidents
+    if score < 40:
+        return {"status": "ignored", "reason": "score below threshold", "score": score}
+
+    # Save to incidents store
+    incident_id = payload.get("incident_id", f"INC-{int(datetime.now().timestamp())}")
+    incident_store[incident_id] = payload
+
+    # Broadcast to WebSocket live feed
+    await manager.broadcast({
+        **payload,
+        "incident_id": incident_id,
+    })
+
+    return {"status": "logged", "incident_id": incident_id}
 
 @app.post("/ingest/log")
 @limiter.limit("60/minute")
@@ -293,7 +406,7 @@ async def health():
         "service": "SentinelAI",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "incidents_in_memory": len(incident_store),
-        "ws_clients_connected": len(ws_clients),
+        "ws_clients_connected": len(manager.active),
         "local_mode": orchestrator.local_mode,
         "threshold": orchestrator.threshold,
     }
@@ -305,20 +418,87 @@ async def get_mitre(tactic_key: str):
         raise HTTPException(status_code=404, detail="Tactic not found")
     return info
 
+# ── Agent Status & Checkin ───────────────────────────────────────────────────
+@app.get("/agents/status")
+async def get_agent_status():
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc)
+    result = {}
+    for name, info in agent_registry.items():
+        if info["last_seen"] is None:
+            result[name] = "offline"
+        elif (now - datetime.fromisoformat(info["last_seen"])) > timedelta(seconds=30):
+            result[name] = "offline"   # missed heartbeat
+        else:
+            result[name] = info["status"]
+    return result
+
+@app.post("/agents/checkin")
+async def agent_checkin(payload: dict):
+    from datetime import datetime, timezone
+    name = payload.get("agent")
+    if name in agent_registry:
+        agent_registry[name] = {
+            "status":    "online",
+            "last_seen": datetime.now(timezone.utc).isoformat()
+        }
+    return {"ok": True}
+
+@app.post("/agents/start/{agent_name}")
+async def start_agent(agent_name: str, req: AgentStartRequest):
+    if agent_name in active_agents:
+        try:
+            active_agents[agent_name].terminate()
+        except Exception:
+            pass
+
+    env = os.environ.copy()
+    script_path = os.path.join(os.path.dirname(__file__), "agents", f"{agent_name}.py")
+
+    if not os.path.exists(script_path):
+        raise HTTPException(404, "Agent script not found")
+
+    args = [sys.executable, script_path]
+
+    if agent_name == "email_daemon":
+        env["EMAIL_IMAP_HOST"] = req.config.get("host", "imap.gmail.com")
+        env["EMAIL_USER"] = req.config.get("user", "")
+        env["EMAIL_APP_PASSWORD"] = req.config.get("password", "")
+        env["SENTINEL_API_URL"] = "http://localhost:8000"
+
+    elif agent_name == "log_collector":
+        log_type = req.config.get("type", "auth")
+        args.extend(["--type", log_type])
+        env["SENTINEL_API_URL"] = "http://localhost:8000"
+
+    proc = subprocess.Popen(args, env=env)
+    active_agents[agent_name] = proc
+
+    agent_registry[agent_name] = {
+        "status": "starting",
+        "last_seen": datetime.now(timezone.utc).isoformat()
+    }
+
+    return {"status": "started", "pid": proc.pid}
+
 # ── WebSocket — real-time live feed ───────────────────────────────────────────
 @app.websocket("/ws/live")
 async def websocket_live(websocket: WebSocket):
-    await websocket.accept()
-    ws_clients.append(websocket)
+    from datetime import datetime, timezone
+    await manager.connect(websocket)
     recent = sorted(list(incident_store.values()), key=lambda x: x.get("timestamp", ""), reverse=True)[:10]
     for inc in recent:
         await websocket.send_text(json.dumps(inc))
     try:
         while True:
-            await asyncio.sleep(30)
-            await websocket.send_text(json.dumps({"type": "ping"}))
+            await asyncio.sleep(15)
+            await websocket.send_text(json.dumps({
+                "type": "heartbeat",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }))
     except WebSocketDisconnect:
-        ws_clients.remove(websocket)
+        manager.disconnect(websocket)
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

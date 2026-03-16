@@ -1,5 +1,7 @@
 import React, { useContext } from 'react'
 import { ThemeContext } from '../App'
+import { useMode } from '../context/ModeContext'
+import { useLiveFeed } from '../hooks/useLiveFeed'
 
 // Shield SVG logo
 function ShieldLogo() {
@@ -12,6 +14,29 @@ function ShieldLogo() {
   )
 }
 
+function ConnectionStatus({ status }) {
+  const config = {
+    connected:    { dot: '#12B76A', label: 'Connected'   },
+    connecting:   { dot: '#F79009', label: 'Connecting…' },
+    disconnected: { dot: '#F04438', label: 'Disconnected' },
+  }[status] || { dot: '#9CA3AF', label: 'Unknown' }
+
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:13,
+                  color:'var(--text-secondary)' }}>
+      <span style={{
+        width:8, height:8, borderRadius:'50%',
+        background: config.dot,
+        boxShadow: status === 'connected'
+          ? `0 0 0 2px ${config.dot}33`
+          : 'none',
+        display:'inline-block'
+      }}/>
+      {config.label}
+    </div>
+  )
+}
+
 const NAV_ITEMS = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'scan',      label: 'Scan' },
@@ -21,7 +46,10 @@ const NAV_ITEMS = [
 ]
 
 export default function Topbar({ current, onNavigate }) {
-  const { incidents, wsConnected, stats, localMode } = useContext(ThemeContext)
+  const { incidents } = useContext(ThemeContext)
+  const { status } = useLiveFeed()
+  const { mode, localServerOnline } = useMode()
+  
   const criticalCount = incidents.filter(i => i.severity === 'Critical').length
 
   return (
@@ -80,26 +108,22 @@ export default function Topbar({ current, onNavigate }) {
           </div>
         )}
 
-        {/* System status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{
-            width: 7, height: 7, borderRadius: '50%',
-            background: wsConnected ? 'var(--clean)' : 'var(--text-muted)',
-            animation: wsConnected ? 'pulseDot 2s infinite' : 'none',
-          }} />
-          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-            {wsConnected ? 'All systems operational' : 'Connecting…'}
-          </span>
-        </div>
+        {/* WS status */}
+        <ConnectionStatus status={status} />
 
         {/* Air-gapped badge */}
-        {localMode && (
-          <span style={{
-            padding: '3px 10px', borderRadius: 20,
-            background: 'var(--clean-dim)', color: 'var(--clean)',
-            fontSize: 11, fontWeight: 600, border: '1px solid rgba(18,183,106,0.3)',
-            animation: 'feedIn 0.3s ease',
-          }}>🔒 Air-gapped</span>
+        {mode === 'local' && (
+          <div style={{
+            display:'flex', alignItems:'center', gap:6,
+            padding:'4px 12px', borderRadius:20,
+            background: localServerOnline ? '#ECFDF5' : '#FEF3F2',
+            border:`1px solid ${localServerOnline ? '#86EFAC' : '#FECDCA'}`,
+            fontSize:12, fontWeight:600,
+            color: localServerOnline ? '#027A48' : '#B42318',
+            animation:'badgeSlideIn 0.3s ease-out',
+          }}>
+            🔒 {localServerOnline ? 'Air-gapped' : 'Air-gapped (server offline)'}
+          </div>
         )}
       </div>
     </header>

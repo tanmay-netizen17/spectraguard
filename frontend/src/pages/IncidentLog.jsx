@@ -5,7 +5,7 @@ import { SectionHeader } from '../components/SectionHeader'
 import { SeverityBadge } from '../components/SeverityBadge'
 import { ThreatIcon } from '../components/ThreatIcon'
 
-const SEV_OPTS = ['All', 'Critical', 'Likely Malicious', 'Suspicious', 'Clean']
+const SEV_OPTS = ['All', 'Threats (>40)', 'Critical', 'Likely Malicious', 'Suspicious', 'Clean']
 
 function getThreatType(mitre, primary) {
   const text = (mitre || primary || '').toLowerCase()
@@ -20,11 +20,12 @@ function getThreatType(mitre, primary) {
 
 export default function IncidentLog() {
   const { incidents } = useContext(ThemeContext)
-  const [severity, setSeverity] = useState('All')
+  const [severity, setSeverity] = useState('Threats (>40)')
   const [search, setSearch] = useState('')
 
   const filtered = incidents.filter(inc => {
-    if (severity !== 'All' && inc.severity !== severity) return false
+    if (severity === 'Threats (>40)' && inc.sentinel_score < 40) return false
+    if (severity !== 'All' && severity !== 'Threats (>40)' && inc.severity !== severity) return false
     if (search && !JSON.stringify({...inc, evidence: undefined}).toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
