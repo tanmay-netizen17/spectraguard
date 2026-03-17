@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react'
 import { ThemeContext } from '../App'
-import { submitFeedback } from '../api/sentinelApi'
+import { api } from '../api/spectraApi'
 import { SectionHeader } from '../components/SectionHeader'
 import { SeverityBadge } from '../components/SeverityBadge'
 import { ThreatIcon } from '../components/ThreatIcon'
@@ -32,7 +32,7 @@ export default function IncidentLog() {
 
   const handleFalsePositive = async (id, e) => {
     e.stopPropagation()
-    try { await submitFeedback(id, true, 'Marked from SOC log') } catch {}
+    try { await api.feedback(id, 'false_positive', 0) } catch {}
   }
 
   return (

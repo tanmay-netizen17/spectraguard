@@ -215,14 +215,22 @@ Toggle **Local Mode** in Settings to run all inference on your machine with zero
 
 ## Red Team / Adversarial Testing
 
-SpectraGuard tests its own models using four attack types:
+Red Team is an **automated adversarial stress test** for your own models.
 
-| Attack | Method |
-|--------|--------|
-| Homoglyph | Replaces characters with Unicode lookalikes |
-| Synonym substitution | Swaps phishing keywords with neutral synonyms |
-| Zero-width space injection | Inserts invisible characters to break tokenisation |
-| Combined | All three attacks simultaneously |
+1. **Baseline Ingestion**: You paste a known-malicious URL or text that you expect the model to correctly flag.
+2. **Adversarial Mutation**: SpectraGuard generates 4 mutated versions of your input using different attack strategies:
+   - **Homoglyph substitution** — replacing letters with Unicode lookalikes (e.g., `pаypal.com`).
+   - **Synonym swap** — replacing phishing keywords with neutral synonyms.
+   - **Zero-width space injection** — inserting invisible `\u200b` characters to break tokenisation.
+   - **Combined** — applying all three attacks simultaneously.
+3. **Execution**: It sends each mutation to the real `/red-team/run` endpoint which runs the full detector stack.
+4. **Reporting**: It reports a **Resilience Score** — what % of attacks did the model still correctly detect after mutation?
+
+| Resilience Score | Verdict | Recommendation |
+|------------------|---------|----------------|
+| **≥ 85** | Robust | Model is safe for production. |
+| **50–84** | Needs work | Model is vulnerable to simple mutations. |
+| **< 50** | Vulnerable | Model needs urgent retraining with adversarial examples. |
 
 ---
 

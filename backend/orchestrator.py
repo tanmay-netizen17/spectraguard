@@ -92,8 +92,13 @@ class Orchestrator:
             # For simplicity, fallback to heuristic or basic cloud detection for ai-gen
             tasks.append(("aigen", self.nlp.detect_ai_generated(text)))
 
-        # Run all detectors concurrently
-        results = await asyncio.gather(*[t[1] for t in tasks], return_exceptions=True)
+        # Run all detectors concurrently — some local runners return dicts, not coroutines
+        async def _wrap(val):
+            if asyncio.iscoroutine(val):
+                return await val
+            return val
+
+        results = await asyncio.gather(*[_wrap(t[1]) for t in tasks], return_exceptions=True)
         for (name, _), result in zip(tasks, results):
             if isinstance(result, Exception):
                 detector_results[name] = {"score": 0.0, "error": str(result)}

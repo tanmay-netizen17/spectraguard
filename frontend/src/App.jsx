@@ -116,18 +116,22 @@ function AppInner() {
             zIndex:        100,
           }}
         >
-          {/* Logo row */}
-          <div style={{
-            height:       60,
-            display:      'flex',
-            alignItems:   'center',
-            gap:          10,
-            padding:      '0 20px',
-            borderBottom: '1px solid #F0F0F0',
-            flexShrink:   0,
-            overflow:     'hidden',
-            whiteSpace:   'nowrap',
-          }}>
+          {/* Logo row — click to go home */}
+          <div
+            onClick={() => navigate('/')}
+            style={{
+              height:       60,
+              display:      'flex',
+              alignItems:   'center',
+              gap:          10,
+              padding:      '0 20px',
+              borderBottom: '1px solid #F0F0F0',
+              flexShrink:   0,
+              overflow:     'hidden',
+              whiteSpace:   'nowrap',
+              cursor:       'pointer',
+            }}
+          >
             <SpectraLogo size={24} />
             <span style={{
               fontFamily: 'Syne, sans-serif',
