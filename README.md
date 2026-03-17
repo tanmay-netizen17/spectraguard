@@ -1,443 +1,237 @@
-# SentinelAI 🛡️
-### Production-Grade Multi-Threat Cyber Defense Platform
-**IndiaNext Hackathon 2026** · Built in 24 hours
+# SpectraGuard
+
+> AI-powered multi-threat cyber defense platform. Detects, explains, and blocks phishing URLs, malicious emails, deepfakes, prompt injections, and behaviour anomalies — in real time.
 
 ---
 
-## What SentinelAI Does
+## What It Does
 
-SentinelAI is a real-time cyber defense platform that **detects, scores, and explains six categories of AI-powered threats** before they cause damage. It combines six independent AI/ML detectors, fuses their outputs with a custom algorithm, and produces a plain-English explanation that any non-technical user can act on.
+SpectraGuard runs as a local background service that passively monitors your environment:
 
-### Threat Coverage
+- **Browser Extension** intercepts every URL before the page loads
+- **Email Daemon** watches your inbox via IMAP and flags phishing attempts
+- **Log Collector** reads system auth logs and detects intrusion patterns
+- **Manual Scanner** lets you analyse any URL, text, file, or log on demand
 
-| # | Threat Type | Detector | Algorithm |
-|---|---|---|---|
-| 1 | **Phishing Email / Message** | NLP (RoBERTa) | Fine-tuned transformer + heuristic fallback |
-| 2 | **Malicious URL** | URL Detector v2.0 (LightGBM) | 60+ lexical + structural features, homoglyph/IDN/IPv6 detection, async WHOIS, SHAP importance |
-| 3 | **Deepfake Audio/Video** | Deepfake (EfficientNet-B0 + LSTM) | Spatial frame analysis + temporal consistency |
-| 4 | **Prompt Injection** | NLP (shared pipeline) | Token pattern matching + classifier |
-| 5 | **Behaviour Anomaly** | Anomaly Engine (Isolation Forest) | Statistical deviation from auth-log baseline |
-| 6 | **AI-Generated Content** | NLP stylometric head | Perplexity + type-token ratio + marker detection |
-
-### Security Capabilities
-
-- **Real-time threat scoring** on every URL you visit (browser extension)
-- **Passive email monitoring** via IMAP IDLE — intercepts phishing before you open it
-- **Auth-log surveillance** — detects brute-force, credential stuffing, lateral movement
-- **Multi-vector attack detection** — recognises when attackers combine email + URL + deepfake simultaneously
-- **MITRE ATT&CK mapping** — every alert tagged to a kill-chain tactic
-- **Fully explainable detections** — SHAP values, token highlights, Grad-CAM regions, GPT-4o-mini brief on every single detection
-- **SPF/DKIM validation** — email authentication failures raise the threat score
-- **Domain age checking** — newly registered domains (< 7 days) are flagged automatically (real async WHOIS lookup)
-- **Digit-for-letter substitution detection** — catches g00gle.com, payp4l.com leet-speak spoofing
-- **Unicode homoglyph spoofing detection** — catches Cyrillic/Greek characters masquerading as Latin (e.g. `pаypal.com`)
-- **Internationalized Domain Name (IDN) detection** — Punycode / `xn--` prefixed domains flagged
-- **IPv6 address detection** — `http://[::1]/` style C2 endpoints caught
-- **Dangerous URL scheme detection** — `javascript:`, `data:`, `vbscript:`, `blob:` flagged
-- **Double-extension detection** — `invoice.pdf.exe`, `photo.jpg.js` malware delivery patterns
-- **Base64/hex payload detection** — encoded payloads in query strings flagged
-- **Risk category tagging** — every malicious URL gets a category: `credential_harvesting`, `brand_spoofing`, `malware_delivery`, `code_execution`, etc.
-- **Coordinated attack multiplier** — score amplifies when multiple detectors fire together
+Every detection comes with a plain-English explanation, a MITRE ATT&CK classification, and a specific recommended action. No black boxes.
 
 ---
 
-## The Sentinel Score — Custom Scoring Algorithm
-
-**This is not an off-the-shelf score.** It was designed specifically to capture coordinated multi-vector attacks.
-
-### Formula (Simple Explanation)
-
-```
-SentinelScore = (Σ detector_weight × detector_probability)
-                × CoordinationMultiplier
-                × (1 + ContextModifier)
-```
-
-**Step 1 — Weighted Sum** (`Σ wᵢ × pᵢ`)
-
-Each detector returns a probability between 0 and 1. We multiply by its weight and add them up:
-
-| Detector | Default Weight | Why |
-|---|---|---|
-| NLP (Phishing/Injection) | **0.30** | Most common AI-powered attack |
-| URL Scorer | **0.25** | Reliable lexical signal |
-| Deepfake | **0.20** | High-impact but rarer |
-| Behaviour Anomaly | **0.15** | Strong signal but slower |
-| AI-Generated | **0.10** | Supporting evidence |
-
-**Step 2 — Coordination Multiplier**
-
-When attackers combine multiple vectors (send a phishing email AND use a malicious URL), their attack is much more dangerous. This multiplier reflects that:
-
-| Detectors Firing | Multiplier | Meaning |
-|---|---|---|
-| 1 | ×1.0 | Normal — could be false positive |
-| 2 | ×1.25 | Coordinated attack signal |
-| 3+ | ×1.50 | Multi-vector assault — treat as near-certain |
-
-**Step 3 — Context Modifier** (environmental signals, capped at +0.20)
-
-| Signal | Bonus | Why |
-|---|---|---|
-| Domain age < 7 days | +0.08 | Freshly registered = likely disposable phishing domain |
-| SPF/DKIM email auth fail | +0.06 | Sender is not who they claim |
-| Digit substitution in URL | +0.05 | Clear leet-speak spoofing attempt (g00gle, payp4l) |
-| First login from new geo | +0.07 | Possible account takeover |
-| After-hours access | +0.04 | Attackers exploit off-hours monitoring gaps |
-| Unicode homoglyph spoofing | +0.07 | Cyrillic/Greek chars used to visually clone a brand domain |
-| IDN / Punycode domain | +0.05 | Internationalised domain used to disguise the real host |
-| Dangerous URL scheme | +0.09 | `javascript:` / `data:` URLs used for in-browser code execution |
-
-**Final Score** is scaled 0–100 and placed into 4 bands:
-
-| Score | Band | Colour | Meaning |
-|---|---|---|---|
-| 0–30 | CLEAN | 🟢 Green | Safe to proceed |
-| 31–60 | SUSPICIOUS | 🟡 Yellow | Verify before acting |
-| 61–80 | LIKELY MALICIOUS | 🟠 Orange | Block and investigate |
-| 81–100 | CRITICAL | 🔴 Red | Immediate incident response |
-
-**Full implementation**: [`backend/fusion_engine.py`](./backend/fusion_engine.py) — every line commented.
-
----
-
-## Quick Start — All Running Commands
+## Quick Start
 
 ### Prerequisites
-
 - Python 3.10+
 - Node.js 18+
-- pip, npm
+- Git
 
----
-
-### 1. Backend (FastAPI)
-
+### 1. Clone
 ```bash
-# Navigate to backend
-cd sentinelai/backend
-
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Copy environment config
-cp ../.env.example ../.env
-# Edit .env and add your keys
-
-# Run the backend
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+git clone https://github.com/yourusername/spectraguard
+cd spectraguard
 ```
 
-The API will be live at: **http://localhost:8000**
-Interactive docs: **http://localhost:8000/docs**
-
----
-
-### 2. Frontend (React + Vite)
-
+### 2. Backend
 ```bash
-# In a new terminal
-cd sentinelai/frontend
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
 
-# Install dependencies
+### 3. Train Models (first time only, ~3 minutes)
+```bash
+cd backend
+python notebooks/train_url_model.py
+python notebooks/train_email_model.py
+python notebooks/train_log_model.py
+```
+
+### 4. Frontend
+```bash
+cd frontend
 npm install
-
-# Start dev server
 npm run dev
 ```
+Dashboard: **http://localhost:5173**
 
-The dashboard will be live at: **http://localhost:5173**
-
-> The frontend proxies `/api` → `http://localhost:8000` automatically.
-
----
-
-### 3. Email Daemon (Optional — IMAP passive monitoring)
-
+### 5. Local Background Service (optional)
 ```bash
-# In a new terminal, from project root
-cd sentinelai
-
-EMAIL_USER=you@gmail.com \
-EMAIL_APP_PASSWORD=your_app_password \
-EMAIL_IMAP_HOST=imap.gmail.com \
-SENTINEL_API_URL=http://localhost:8000 \
-python backend/agents/email_daemon.py
+cd backend
+python local_service.py
 ```
+Runs silently in your system tray. Shows OS notifications when threats are detected.
 
-> For Gmail: Generate an App Password at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+### 6. Browser Extension
+1. Open Chrome → `chrome://extensions/`
+2. Enable **Developer Mode** (top right)
+3. Click **Load unpacked** → select the `browser-extension/` folder
+4. SpectraGuard Shield icon appears in toolbar
 
----
-
-### 4. Log Collector Agent (Optional — auth.log monitoring)
-
-```bash
-# In a new terminal (Linux/macOS)
-LOG_PATHS=/var/log/auth.log,/var/log/syslog \
-SENTINEL_API_URL=http://localhost:8000 \
-python backend/agents/log_collector.py
+### One-click Start (Windows)
+```
+Double-click: start_spectraguard.bat
 ```
 
 ---
 
-### 5. Browser Extension
+## Threat Coverage
 
-1. Open Chrome → `chrome://extensions`
-2. Enable **Developer Mode** (toggle, top right)
-3. Click **Load Unpacked**
-4. Select the `sentinelai/browser-extension/` folder
-5. The **SentinelAI Shield** icon appears in your toolbar ✓
-
----
-
-### 6. Docker (Backend + Frontend together)
-
-```bash
-# Build and start everything
-cd sentinelai
-docker-compose up --build
-
-# Stop all services
-docker-compose down
-```
+| # | Threat Type | Detection Method | Model |
+|---|------------|-----------------|-------|
+| 1 | Phishing URL | Lexical features + domain analysis | LightGBM (25 features) |
+| 2 | Phishing Email / Text | TF-IDF + keyword patterns | Logistic Regression |
+| 3 | Malicious URL (subdomain trick) | Registrable domain extraction | LightGBM |
+| 4 | Deepfake Image / Video | DCT + noise + ELA analysis | EfficientNet-B0 + Statistical |
+| 5 | Behaviour Anomaly | Log pattern deviation | Isolation Forest |
+| 6 | AI-Generated Content | Perplexity + stylometrics | RoBERTa classifier |
+| 7 | Prompt Injection | Adversarial pattern matching | RoBERTa fine-tuned |
 
 ---
 
-### 7. Quick API Test
+## Spectra Score Algorithm
 
-```bash
-# Health check
-curl http://localhost:8000/health
+Every threat gets a **0–100 Spectra Score** using a custom formula:
 
-# Analyse a URL
-curl -X POST http://localhost:8000/analyse \
-  -H "Content-Type: application/json" \
-  -d '{"url": "http://paypa1.com/verify-account"}'
-
-# Analyse phishing text
-curl -X POST http://localhost:8000/analyse \
-  -H "Content-Type: application/json" \
-  -d '{"text": "URGENT: Your account has been suspended. Verify immediately or lose access."}'
-
-# Analyse behaviour log
-curl -X POST http://localhost:8000/analyse \
-  -H "Content-Type: application/json" \
-  -d '{"log_data": "Failed password for root from 192.168.1.1 port 22\nFailed password for root from 10.0.0.1 port 22"}'
-
-# View all incidents
-curl http://localhost:8000/incidents
+```
+Score = Σ(wᵢ × pᵢ) × CoordinationMultiplier × ContextModifier
 ```
 
----
+- **wᵢ** = per-detector weight (NLP: 30%, URL: 25%, Deepfake: 20%, Anomaly: 15%, AI: 10%)
+- **CoordinationMultiplier**: 1.25× when 2 detectors fire, 1.5× when 3+ fire
+- **ContextModifier**: +0.08 for domain age <7 days, +0.06 for SPF/DKIM fail, etc.
 
-### 8. Test Phishing URLs (Safe — for dev/demo use only)
-
-> ⚠️ These are **synthetic/controlled test URLs** crafted to exercise specific detection rules.  
-> They are **not live phishing pages** — some domains do not exist or are registered safety-net domains.
-> Use them to verify that the URL Detector v2.0 fires correctly.
-
-| Test URL | Expected Signals Triggered | Expected Risk Category |
-|---|---|---|
-| `http://paypa1.com/verify-account` | digit_substitution, phishing_kw | `credential_harvesting` |
-| `http://192.168.1.200/secure/login.php` | is_ip_address, phishing_kw | `ip_based_c2` |
-| `http://bit.ly/3xF9qZp` | url_shortener | `url_obfuscation` |
-| `http://g00gle-secure.tk/signin` | digit_sub, suspicious_tld, phishing_kw | `credential_harvesting` |
-| `http://[::1]/admin/payload` | is_ipv6, is_ip_address | `ip_based_c2` |
-| `javascript:alert(document.cookie)` | dangerous_scheme | `code_execution` |
-| `http://xn--pypal-4ve.com/update` | is_idn, phishing_kw | `brand_spoofing` |
-| `http://microsoft.account-verify.xyz/login` | suspicious_tld, phishing_kw, long_url | `credential_harvesting` |
-| `http://support.apple.com-id-login.top/verify` | suspicious_tld, phishing_kw, subdomains | `credential_harvesting` |
-| `http://dropbox.com.download-file.cc/invoice.pdf.exe` | suspicious_tld, double_ext, phishing_kw | `malware_delivery` |
-| `http://secure-bank-login.pw/account?user=admin&redirect=http://evil.com` | suspicious_tld, redirect, phishing_kw | `credential_harvesting` |
-| `https://amaz0n-prime.win/offer?token=dXNlcm5hbWU6cGFzc3dvcmQ=` | digit_sub, suspicious_tld, base64_payload | `credential_harvesting` |
-
-**Quick batch test (PowerShell) — using `/analyse/url`:**
-```powershell
-$urls = @(
-  "http://paypa1.com/verify-account",
-  "http://g00gle-secure.tk/signin",
-  "http://xn--pypal-4ve.com/update",
-  "http://192.168.1.200/secure/login.php",
-  "http://dropbox.com.download-file.cc/invoice.pdf.exe"
-)
-foreach ($url in $urls) {
-  $body = @{ url = $url } | ConvertTo-Json
-  $resp = Invoke-RestMethod -Uri http://localhost:8000/analyse/url -Method POST -ContentType 'application/json' -Body $body
-  Write-Host "[$($resp.severity)] score=$($resp.sentinel_score) cat=$($resp.url_risk_category) → $url"
-}
-```
-
-**Or using the general `/analyse` endpoint with `type` + `content`:**
-```powershell
-$urls = @(
-  "http://paypa1.com/verify-account",
-  "http://g00gle-secure.tk/signin",
-  "http://192.168.1.200/secure/login.php"
-)
-foreach ($url in $urls) {
-  $body = @{ type = "url"; content = $url } | ConvertTo-Json
-  $resp = Invoke-RestMethod -Uri http://localhost:8000/analyse -Method POST -ContentType 'application/json' -Body $body
-  Write-Host "[$($resp.severity)] score=$($resp.sentinel_score) → $url"
-}
-```
-
-> ⚠️ **Never open these test URLs in your browser.** Paste them into the SentinelAI UI or API only.
-> Fake/synthetic domains will return `DNS_PROBE_FINISHED_NXDOMAIN` — that's expected, they don't exist.
-
-**Quick batch test (bash/curl) — using `/analyse/url`:**
-```bash
-for url in \
-  "http://paypa1.com/verify-account" \
-  "http://g00gle-secure.tk/signin" \
-  "http://xn--pypal-4ve.com/update" \
-  "http://192.168.1.200/secure/login.php" \
-  "http://dropbox.com.download-file.cc/invoice.pdf.exe"
-do
-  echo "Testing: $url"
-  curl -s -X POST http://localhost:8000/analyse \
-    -H "Content-Type: application/json" \
-    -d "{\"url\": \"$url\"}" | python3 -m json.tool | grep -E '"severity"|"sentinel_score"|"url_risk_category"'
-  echo "---"
-done
-```
-
----
-
-## Deployment
-
-### Backend → Railway
-
-1. Push to GitHub
-2. [railway.app](https://railway.app) → New Project → Deploy from GitHub → select `sentinelai/backend`
-3. Set environment variables (from `.env`) in the Railway dashboard
-4. Railway will auto-deploy on every git push
-
-### Frontend → Vercel
-
-1. [vercel.com](https://vercel.com) → New Project → Import GitHub repo
-2. Root directory: `sentinelai/frontend`
-3. Set `VITE_API_URL` and `VITE_WS_URL` to your Railway backend URL
-4. Vercel auto-deploys on every push
+| Score | Severity | Action |
+|-------|----------|--------|
+| 0–30 | Clean | No action |
+| 31–60 | Suspicious | Monitor |
+| 61–80 | Likely Malicious | Quarantine / Block |
+| 81–100 | Critical | Immediate action |
 
 ---
 
 ## Architecture
 
 ```
-Browser Extension ──────────────────────┐
-Email Daemon (IMAP IDLE) ───────────────┤
-Log Collector (auth.log watcher) ───────┤
-Manual Input (UI) ───────────────────────┼──→ FastAPI Gateway
-                                         │        │
-                                    dedup/queue   ▼
-                                         │   Orchestrator
-                                         │    ├── NLP Detector (RoBERTa)
-                                         │    ├── URL Detector v2.0 (LightGBM 60+ features, homoglyph/IDN/IPv6)
-                                         │    ├── Deepfake Detector (EfficientNet + LSTM)
-                                         │    └── Anomaly Detector (Isolation Forest)
-                                         │        │
-                                         │        ▼
-                                         │   Fusion Engine → SENTINEL SCORE
-                                         │        │
-                                         │        ▼
-                                         │   XAI Synthesiser
-                                         │    ├── SHAP feature importance
-                                         │    ├── Token highlights
-                                         │    ├── Grad-CAM regions
-                                         │    └── GPT-4o-mini plain-English brief
-                                         │        │
-                                         └────────▼
-                                         React Dashboard (WebSocket live feed)
+INGESTION LAYER
+  Browser Extension (passive URL intercept)
+  Email Daemon (IMAP IDLE monitoring)
+  Log Collector (auth.log / syslog)
+  Manual Scanner (UI input)
+        │
+        ▼
+API GATEWAY (FastAPI, port 8000)
+        │
+        ▼
+ORCHESTRATOR (routes input to detectors)
+        │
+   ┌────┼────┬────────┐
+   ▼    ▼    ▼        ▼
+  NLP  URL  Deep   Anomaly
+  Det  Det  fake   Engine
+        │
+        ▼
+FUSION ENGINE (Spectra Score)
+        │
+        ▼
+XAI SYNTHESISER (SHAP + GPT-4o-mini)
+        │
+        ▼
+DASHBOARD (React, port 5173)
 ```
-
----
-
-## API Reference
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/analyse` | Full pipeline — any input type |
-| `POST` | `/ingest/url` | From browser extension |
-| `POST` | `/ingest/email` | From email daemon |
-| `POST` | `/ingest/log` | From log collector |
-| `POST` | `/ingest/file` | Image/video upload |
-| `GET` | `/incidents` | Paginated incident list |
-| `GET` | `/incidents/{id}` | Full incident detail |
-| `POST` | `/feedback/{id}` | Mark as false positive |
-| `GET` | `/health` | System health check |
-| `WS` | `/ws/live` | WebSocket live feed |
 
 ---
 
 ## Project Structure
 
 ```
-sentinelai/
+spectraguard/
 ├── backend/
-│   ├── main.py                  # FastAPI entrypoint, all endpoints
-│   ├── orchestrator.py          # Input router, detector fan-out
-│   ├── fusion_engine.py         # ← SENTINEL SCORE algorithm (fully commented)
-│   ├── xai_synthesiser.py       # SHAP + token highlights + GPT-4o-mini
+│   ├── main.py                  # FastAPI app, all endpoints
+│   ├── orchestrator.py          # Routes input to detectors
+│   ├── fusion_engine.py         # Custom Spectra Score algorithm
+│   ├── xai_synthesiser.py       # Explainability + GPT-4o-mini brief
+│   ├── local_service.py         # Background tray agent + OS notifications
+│   ├── local_server.py          # Air-gapped ONNX inference server (port 8001)
 │   ├── detectors/
-│   │   ├── nlp_detector.py      # Phishing, prompt injection, AI-gen
-│   │   ├── url_detector.py      # LightGBM + 60+ features, homoglyph, IDN, async WHOIS (v2.0)
-│   │   ├── deepfake_detector.py # EfficientNet-B0 + LSTM temporal
-│   │   └── anomaly_detector.py  # Isolation Forest on auth logs
+│   │   ├── nlp_detector.py
+│   │   ├── url_detector.py
+│   │   ├── deepfake_detector.py
+│   │   └── anomaly_detector.py
 │   ├── agents/
-│   │   ├── email_daemon.py      # IMAP IDLE passive email monitor
-│   │   ├── log_collector.py     # auth.log / syslog watcher
-│   │   └── browser_relay.py     # Extension ↔ backend bridge
+│   │   ├── email_daemon.py
+│   │   ├── log_collector.py
+│   │   └── browser_relay.py
+│   ├── red_team/
+│   │   ├── attacker.py
+│   │   ├── robustness_evaluator.py
+│   │   └── model_health.py
+│   ├── models/
+│   ├── notebooks/
 │   └── utils/
-│       ├── mitre_mapper.py      # ATT&CK tactic mapping
-│       └── response_generator.py # Mitigation recommendations
 ├── browser-extension/
-│   ├── manifest.json            # Chrome Manifest V3
-│   ├── background.js            # URL intercept + overlay injection
-│   └── popup/                   # Extension popup UI
+│   ├── manifest.json            # Chrome MV3
+│   ├── background.js            # URL intercept + notifications
+│   ├── content.js               # Warning overlay injection
+│   └── popup/
 ├── frontend/
-│   └── src/
-│       ├── App.jsx              # Root: routing, WebSocket, global state
-│       ├── pages/               # Dashboard, ScanPage, IncidentLog, Settings
-│       ├── components/          # SentinelGauge, EvidenceCard, ThreatBrief, ...
-│       └── api/sentinelApi.js   # Axios wrapper + WebSocket factory
-├── docker-compose.yml
-├── .env.example
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── api/spectraApi.js    # All API calls in one place
+│   │   ├── components/
+│   │   └── pages/
+│   └── .env
+├── start_spectraguard.bat       # Windows one-click start
+├── start_spectraguard.sh        # Mac/Linux one-click start
 └── README.md
 ```
 
 ---
 
-## Changelog
+## Environment Variables
 
-### v2.0 — URL Detector Overhaul _(2026-03-16)_
+Create `backend/.env`:
+```env
+OPENAI_API_KEY=sk-...          # GPT-4o-mini for XAI explanations
+VIRUSTOTAL_API_KEY=...         # Optional: URL enrichment
+EMAIL_APP_PASSWORD=...         # Gmail app password for email daemon
+```
 
-#### `backend/detectors/url_detector.py`
-- **+10 new detection signals**: Unicode homoglyph spoofing, Punycode/IDN domains, IPv6 address hosts, dangerous schemes (`javascript:`, `data:`, `vbscript:`), double-extension files, Base64 payload in query, new redirect tokens (`next=`, `goto=`), fragment length, query entropy, hyphen density
-- **Async WHOIS lookup** — non-blocking domain-age resolution using `run_in_executor` with a 5 s timeout; no longer a static `-1` placeholder
-- **`risk_category` field** — new categorical output: `credential_harvesting`, `brand_spoofing`, `malware_delivery`, `code_execution`, `ip_based_c2`, `url_obfuscation`, `redirect_chain`, `suspicious_domain`
-- **Model path resolution** fixed to be relative to `__file__` — works regardless of working directory
-- **URL normalisation** — missing `http://` scheme added automatically before parsing
-- **Expanded datasets**: shorteners 25→31, suspicious TLDs 17→33, phishing keywords 23→42
-- **60+ features total** (up from 34), all typed as `float` for LightGBM compatibility
-- **`_explain_top_features`** expands to 12 entries covering all new detection signals
-
-#### `backend/fusion_engine.py`
-- Added 3 new `CONTEXT_MODIFIER_MAP` entries: `homoglyph_spoofing` (+0.07), `idn_domain` (+0.05), `dangerous_scheme` (+0.09)
-
-#### `backend/orchestrator.py`
-- Reads new URL flags (`has_homoglyph`, `is_idn`, `dangerous_scheme`) and forwards to Fusion Engine context signals
-- Fixed `domain_age_new` to `0 <= age < 7` (prevents `-1` unknown age from triggering false `domain_age_new` signal)
-- Incident payload now includes `url_risk_category`, `mitre_description`, `mitre_mitigations`
-
-#### `backend/xai_synthesiser.py`
-- `_url_evidence()` now surfaces all new flags + `risk_category`, `url`, `normalised_url`
-- `_url_explain()` generates richer natural-language descriptions for homoglyph, IDN, scheme, TLD, `@`-sign, and domain age
-- `_compute_shap_values()` updated with 18-feature weight table aligned to v2.0 feature set (top 12 returned)
+Create `frontend/.env`:
+```env
+VITE_API_URL=http://localhost:8000
+VITE_WS_URL=ws://localhost:8000
+```
 
 ---
 
-## Built for IndiaNext Hackathon 2026
+## Air-gapped / Local Mode
 
-**Theme:** AI vs AI — defending against AI-powered cyber attacks  
-**Team:** SentinelAI  
-**Submission deadline:** March 17, 2026 12:00 PM
+Toggle **Local Mode** in Settings to run all inference on your machine with zero external calls:
+
+1. Start the local inference server: `python backend/local_server.py`
+2. Toggle Air-gapped Mode in Settings
+3. The 🔒 badge appears — all analysis now runs on ONNX models locally
+
+---
+
+## Red Team / Adversarial Testing
+
+SpectraGuard tests its own models using four attack types:
+
+| Attack | Method |
+|--------|--------|
+| Homoglyph | Replaces characters with Unicode lookalikes |
+| Synonym substitution | Swaps phishing keywords with neutral synonyms |
+| Zero-width space injection | Inserts invisible characters to break tokenisation |
+| Combined | All three attacks simultaneously |
+
+---
+
+## Built At
+
+**IndiaNext Hackathon 2026** · K.E.S. Shroff College, Mumbai · March 16–17, 2026
+
+---
+
+## License
+
+MIT

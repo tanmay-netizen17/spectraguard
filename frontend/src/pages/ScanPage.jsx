@@ -1,6 +1,6 @@
 import React, { useState, useRef, useContext } from 'react'
 import { ThemeContext } from '../App'
-import { analyseInput, ingestFile } from '../api/sentinelApi'
+import { api } from '../api/spectraApi'
 import SentinelGauge from '../components/SentinelGauge'
 import EvidenceCard from '../components/EvidenceCard'
 import ThreatBrief from '../components/ThreatBrief'
@@ -21,54 +21,20 @@ export default function ScanPage() {
   const handleAnalyse = async () => {
     if (tab !== 2 && !input.trim()) return
     setError(''); setResult(null); setLoading(true)
-    
     try {
-      const base = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-      
       if (tab === 2) {
-        if (!fileRef.current?.files[0]) {
-          setLoading(false)
-          return
-        }
-
+        if (!fileRef.current?.files[0]) { setLoading(false); return }
         const formData = new FormData()
         formData.append('file', fileRef.current.files[0])
         formData.append('source', 'manual')
-
-        const response = await fetch(`${base}/analyse/file`, {
-          method: 'POST',
-          body: formData,
-        })
-
-        if (!response.ok) {
-          const body = await response.text()
-          throw new Error(`Server error ${response.status}: ${body.slice(0, 200)}`)
-        }
-
-        const data = await response.json()
+        const data = await api.analyseFile(formData)
         if (data.error) throw new Error(data.error)
-        
         setResult(data)
         if (data.incident_id) addIncident(data)
       } else {
         const type_map = ['url', 'text', 'file', 'log']
-        const res = await fetch(`${base}/analyse`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            input: input.trim(),
-            type:  type_map[tab],
-          }),
-        })
-
-        if (!res.ok) {
-          const body = await res.text()
-          throw new Error(`Server error ${res.status}: ${body.slice(0, 200)}`)
-        }
-
-        const data = await res.json()
+        const data = await api.analyse(input.trim(), type_map[tab])
         if (data.error) throw new Error(data.error)
-        
         setResult(data)
         if (data.incident_id) addIncident(data)
       }

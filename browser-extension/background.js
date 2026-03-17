@@ -1,129 +1,136 @@
-/**
- * SentinelAI Shield — Background Service Worker (V2)
- * Advanced real-time threat detection and response.
- */
+const BACKEND = 'http://localhost:8000'
+const THRESHOLD_WARN    = 61    // show warning overlay
+const THRESHOLD_NOTIFY  = 40    // show browser notification
+const CHECK_COOLDOWN_MS = 10000 // don't re-check same URL within 10s
 
-const SENTINEL_API = "http://localhost:8000";
-const ALERT_THRESHOLD = 70;   // Show browser notification
-const BLOCK_THRESHOLD = 85;   // Show full-screen blocking overlay
-const MAX_HISTORY = 20;
+const checkedUrls = new Map()  // url → { score, timestamp }
 
-// Scanned URL cache to prevent redundant API calls
-const scanCache = new Map();
-
-// ── Navigation listener ──────────────────────────────────────────────────────
+// ── Listen for navigation ────────────────────────────────────────────────────
 chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
-  if (details.frameId !== 0) return; // Only main frame
+  if (details.frameId !== 0) return   // main frame only
+  const url = details.url
+  if (!url.startsWith('http')) return
+  if (isInternalUrl(url)) return
 
-  const url = details.url;
-  if (shouldSkip(url)) return;
+  // Cooldown check
+  const cached = checkedUrls.get(url)
+  if (cached && Date.now() - cached.timestamp < CHECK_COOLDOWN_MS) return
 
-  // Debounce/Cache check (5 min TTL)
-  if (scanCache.has(url) && (Date.now() - scanCache.get(url).time < 300000)) {
-    handleResult(url, scanCache.get(url).result, details.tabId);
-    return;
-  }
+  await checkUrl(url, details.tabId)
+})
 
+function isInternalUrl(url) {
+  const skip = ['localhost','127.0.0.1','chrome://','chrome-extension://','about:']
+  return skip.some(s => url.includes(s))
+}
+
+async function checkUrl(url, tabId) {
   try {
-    const response = await fetch(`${SENTINEL_API}/analyze/url`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url })
-    });
+    const res = await fetch(`${BACKEND}/analyse`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ input: url, type: 'url' }),
+    })
+    const data = await res.json()
+    const score    = data.sentinel_score || 0
+    const severity = data.severity || 'Clean'
+    const brief    = data.threat_brief || ''
 
-    if (!response.ok) throw new Error("API Offline");
-    const result = await response.json();
-    
-    scanCache.set(url, { result, time: Date.now() });
-    handleResult(url, result, details.tabId);
-    
-    // Log threat to dashboard if suspicious/critical
-    if (result.score >= ALERT_THRESHOLD) {
-        logToDashboard(url, result);
+    checkedUrls.set(url, { score, timestamp: Date.now() })
+
+    // Update badge
+    updateBadge(tabId, score)
+
+    if (score >= THRESHOLD_NOTIFY) {
+      chrome.notifications.create(`threat-${Date.now()}`, {
+        type:     'basic',
+        iconUrl:  'icons/icon128.png',
+        title:    `SpectraGuard — ${severity} (${score}/100)`,
+        message:  brief.slice(0, 150) || `Threat detected on ${new URL(url).hostname}`,
+        priority: score >= 81 ? 2 : 1,
+        buttons:  score >= 61 ? [{ title: 'Block & Go Back' }] : [],
+      })
     }
 
-  } catch (e) {
-    console.warn("[SentinelAI] Analysis failed:", e.message);
-  }
-});
+    if (score >= THRESHOLD_WARN) {
+      chrome.scripting.executeScript({
+        target: { tabId },
+        func:   injectWarningOverlay,
+        args:   [score, severity, new URL(url).hostname, brief],
+      }).catch(() => {})
+    }
 
-// ── Response Logic ────────────────────────────────────────────────────────────
-function handleResult(url, result, tabId) {
-  storeResult(url, result);
+    // Send to popup if open
+    chrome.runtime.sendMessage({
+      type: 'SCAN_RESULT', url, score, severity, brief,
+    }).catch(() => {})
 
-  if (result.score >= BLOCK_THRESHOLD) {
-    // Critical Threat: Inject Blocking Overlay
-    chrome.scripting.executeScript({
-      target: { tabId: tabId },
-      files: ["content.js"]
-    }).then(() => {
-      chrome.tabs.sendMessage(tabId, { action: "show_blocking_overlay", result });
-    });
-  } else if (result.score >= ALERT_THRESHOLD) {
-    // High Threat: Show Browser Notification
-    chrome.notifications.create({
-      type: "basic",
-      iconUrl: "icons/icon128.png",
-      title: "⚠ SentinelAI Security Warning",
-      message: `Suspicious activity detected at ${new URL(url).hostname}. Score: ${result.score}/100`,
-      priority: 2
-    });
+    // Save to recent list
+    saveToRecent({ url, score, severity, timestamp: Date.now() })
+
+  } catch (err) {
+    console.debug('[SpectraGuard] Backend unreachable:', err.message)
   }
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-function shouldSkip(url) {
-  const skipProtocols = ["chrome:", "chrome-extension:", "about:", "data:", "file:"];
-  if (skipProtocols.some(p => url.startsWith(p))) return true;
-  
-  const hostname = new URL(url).hostname;
-  return hostname === "localhost" || hostname === "127.0.0.1";
+function updateBadge(tabId, score) {
+  const colour = score >= 81 ? '#F04438'
+               : score >= 61 ? '#EF6820'
+               : score >= 40 ? '#F79009'
+               : '#12B76A'
+  const text   = score >= 40 ? score.toString() : ''
+  chrome.action.setBadgeBackgroundColor({ color: colour, tabId })
+  chrome.action.setBadgeText({ text, tabId })
 }
 
-async function logToDashboard(url, result) {
-    try {
-        await fetch(`${SENTINEL_API}/log/threat`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                url,
-                sentinel_score: result.score,
-                severity: result.severity,
-                threat_brief: result.explanation,
-                timestamp: new Date().toISOString(),
-                source: "browser_agent_realtime"
-            })
-        });
-    } catch (e) {}
+function injectWarningOverlay(score, severity, hostname, brief) {
+  if (document.getElementById('spectraguard-overlay')) return
+
+  const overlay = document.createElement('div')
+  overlay.id    = 'spectraguard-overlay'
+  overlay.style.cssText = `
+    position:fixed; top:0; left:0; right:0; z-index:2147483647;
+    background:${score >= 81 ? '#FEF2F2' : '#FFFAEB'};
+    border-bottom:3px solid ${score >= 81 ? '#F04438' : '#F79009'};
+    padding:12px 20px;
+    display:flex; align-items:center; justify-content:space-between;
+    font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+    font-size:13px; color:#0D1117;
+    box-shadow:0 2px 12px rgba(0,0,0,0.15);
+  `
+  overlay.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">${score >= 81 ? '🚨' : '⚠️'}</span>
+      <div>
+        <strong>SpectraGuard — ${severity} (${score}/100)</strong>
+        <div style="font-size:12px;color:#6B7280;margin-top:2px">
+          ${hostname} · ${brief.slice(0,120)}
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0;margin-left:12px">
+      ${score >= 61 ? `<button id="sg-block" style="background:#F04438;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">Go Back</button>` : ''}
+      <button id="sg-dismiss" style="background:none;border:1px solid #E5E7EB;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px">Dismiss</button>
+    </div>
+  `
+  document.body.prepend(overlay)
+
+  document.getElementById('sg-dismiss')?.addEventListener('click', () => overlay.remove())
+  document.getElementById('sg-block')?.addEventListener('click',   () => history.back())
 }
 
-async function storeResult(url, result) {
-  const { history = [] } = await chrome.storage.local.get("history");
-  const newEntry = {
-    url: url.substring(0, 100),
-    score: result.score,
-    severity: result.severity,
-    timestamp: new Date().toISOString(),
-  };
-  await chrome.storage.local.set({ 
-      history: [newEntry, ...history].slice(0, MAX_HISTORY) 
-  });
-}
-
-// ── Message Listener (Text Extraction) ───────────────────────────────────────
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "analyze_text") {
-    fetch(`${SENTINEL_API}/analyze/text`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: request.text })
+// Handle notification button click
+chrome.notifications.onButtonClicked.addListener((notifId, btnIdx) => {
+  if (btnIdx === 0) {
+    chrome.tabs.query({ active:true, currentWindow:true }, tabs => {
+      if (tabs[0]) chrome.tabs.goBack(tabs[0].id)
     })
-    .then(r => r.json())
-    .then(result => {
-      handleResult(sender.tab.url, result, sender.tab.id);
-      sendResponse({ status: "processed" });
-    })
-    .catch(() => sendResponse({ status: "error" }));
-    return true; // async
   }
-});
+})
+
+// Recent scans storage
+async function saveToRecent(item) {
+  const { recent = [] } = await chrome.storage.local.get('recent')
+  recent.unshift(item)
+  await chrome.storage.local.set({ recent: recent.slice(0, 20) })
+}

@@ -1,51 +1,39 @@
-const DASHBOARD_URL = "http://localhost:5173";
+async function loadRecent() {
+  const { recent = [] } = await chrome.storage.local.get('recent')
+  const list = document.getElementById('scan-list')
 
-function severityClass(severity) {
-  const map = { "Critical": "critical", "Likely Malicious": "likely", "Suspicious": "suspicious", "Clean": "clean" };
-  return map[severity] || "clean";
-}
-
-function renderHistory(history) {
-  const container = document.getElementById("entries");
-  if (!history || history.length === 0) {
-    container.innerHTML = '<div class="empty">No URLs scanned yet.<br>Browse to start protection.</div>';
-    return;
+  if (recent.length === 0) {
+    list.innerHTML = '<div class="empty">No scans yet this session</div>'
+    return
   }
 
-  container.innerHTML = history.map(item => {
-    const cls = severityClass(item.severity);
+  document.getElementById('scan-count').textContent =
+    `${recent.length} scan${recent.length > 1 ? 's' : ''} today`
+
+  list.innerHTML = recent.slice(0, 10).map(item => {
+    const badge = item.score >= 81 ? 'critical'
+                : item.score >= 61 ? 'likely'
+                : item.score >= 40 ? 'suspicious'
+                : 'clean'
+    const label = item.score >= 81 ? 'Critical'
+                : item.score >= 61 ? 'Likely Malicious'
+                : item.score >= 40 ? 'Suspicious'
+                : 'Clean'
+    const hostname = (() => { try { return new URL(item.url).hostname } catch { return item.url } })()
+    const time = new Date(item.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })
+
     return `
-      <div class="entry">
-        <div class="score ${cls}">${item.score}</div>
-        <div class="meta">
-          <div class="url-text" title="${item.url}">${item.url}</div>
-          <div class="sev">${new Date(item.timestamp).toLocaleTimeString()}</div>
+      <div class="scan-item">
+        <div>
+          <div class="scan-url" title="${item.url}">${hostname}</div>
+          <div class="scan-time">${time}</div>
         </div>
-        <div class="badge ${cls}">${item.severity}</div>
-      </div>`;
-  }).join("");
+        <span class="badge badge-${badge}">${label}</span>
+      </div>
+    `
+  }).join('')
 }
 
-async function loadHistory() {
-  chrome.runtime.sendMessage({ type: "GET_HISTORY" }, ({ history }) => {
-    renderHistory(history || []);
-    const statusEl = document.getElementById("status");
-    if (history && history.length > 0) {
-      statusEl.textContent = `${history.length} URL${history.length > 1 ? "s" : ""} scanned this session`;
-    } else {
-      statusEl.textContent = "Active — monitoring all navigation";
-    }
-  });
-}
-
-document.getElementById("btn-open").addEventListener("click", () => {
-  chrome.tabs.create({ url: DASHBOARD_URL });
-});
-
-document.getElementById("btn-clear").addEventListener("click", async () => {
-  await chrome.storage.local.set({ history: [] });
-  renderHistory([]);
-  document.getElementById("status").textContent = "Cleared";
-});
-
-loadHistory();
+loadRecent()
+// Refresh every 3 seconds
+setInterval(loadRecent, 3000)

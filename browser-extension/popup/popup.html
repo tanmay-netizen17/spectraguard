@@ -1,60 +1,57 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SentinelAI Shield</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { width: 360px; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #FAFAFA; color: #0F172A; }
-
-    .header { background: #0F172A; padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
-    .header h1 { color: #fff; font-size: 15px; font-weight: 700; }
-    .header .dot { width: 8px; height: 8px; background: #10B981; border-radius: 50%; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
-    .status { padding: 12px 16px; background: #fff; border-bottom: 1px solid #E5E7EB; font-size: 12px; color: #6B7280; }
-
-    .entries { max-height: 280px; overflow-y: auto; }
-    .entry { padding: 10px 16px; border-bottom: 1px solid #F3F4F6; display: flex; align-items: center; gap: 10px; }
-    .entry:hover { background: #F9FAFB; }
-    .score { font-size: 18px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; min-width: 36px; text-align: center; }
-    .score.critical { color: #EF4444; }
-    .score.likely { color: #F97316; }
-    .score.suspicious { color: #F59E0B; }
-    .score.clean { color: #10B981; }
-    .meta { flex: 1; min-width: 0; }
-    .meta .url-text { font-size: 11px; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .meta .sev { font-size: 10px; color: #9CA3AF; margin-top: 2px; }
-    .badge { font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase; }
-    .badge.critical { background:#FEF2F2; color:#EF4444; }
-    .badge.likely { background:#FFF7ED; color:#F97316; }
-    .badge.suspicious { background:#FEFCE8; color:#F59E0B; }
-    .badge.clean { background:#F0FDF4; color:#10B981; }
-
-    .footer { padding: 10px 16px; display: flex; gap: 8px; }
-    .btn { flex: 1; padding: 8px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: opacity 0.2s; }
-    .btn:hover { opacity: 0.85; }
-    .btn-primary { background: #6366F1; color: #fff; }
-    .btn-secondary { background: #E5E7EB; color: #374151; }
-
-    .empty { padding: 30px 16px; text-align: center; color: #9CA3AF; font-size: 12px; }
-  </style>
+<meta charset="UTF-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { width:320px; font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+         background:#FAFAFA; color:#0D1117; }
+  .header { background:#fff; padding:14px 16px; border-bottom:1px solid #E5E7EB;
+            display:flex; align-items:center; gap:10px; }
+  .header-title { font-weight:700; font-size:15px; }
+  .header-title span { color:#0A84FF; }
+  .status-bar { padding:10px 16px; background:#F0FDF4; border-bottom:1px solid #86EFAC;
+                font-size:12px; color:#166534; display:flex; align-items:center; gap:6px; }
+  .status-dot { width:7px; height:7px; border-radius:50%; background:#12B76A; }
+  .section-title { padding:10px 16px 4px; font-size:11px; font-weight:600;
+                   color:#9CA3AF; letter-spacing:0.05em; }
+  .scan-item { padding:10px 16px; border-bottom:1px solid #F0F0F0;
+               display:flex; justify-content:space-between; align-items:center; }
+  .scan-url { font-size:12px; color:#374151; max-width:200px;
+              overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .scan-time { font-size:10px; color:#9CA3AF; }
+  .badge { padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; }
+  .badge-critical  { background:#FEF2F2; color:#B42318; }
+  .badge-likely    { background:#FFF4ED; color:#B93815; }
+  .badge-suspicious{ background:#FFFAEB; color:#B54708; }
+  .badge-clean     { background:#F0FDF4; color:#166534; }
+  .empty { padding:20px 16px; text-align:center; color:#9CA3AF; font-size:13px; }
+  .footer { padding:10px 16px; border-top:1px solid #E5E7EB;
+            display:flex; justify-content:space-between; align-items:center; }
+  .footer a { font-size:12px; color:#0A84FF; text-decoration:none; }
+</style>
 </head>
 <body>
-  <div class="header">
-    <div class="dot"></div>
-    <h1>SentinelAI Shield</h1>
-  </div>
-  <div class="status" id="status">Connecting to SentinelAI...</div>
-  <div class="entries" id="entries">
-    <div class="empty">No URLs scanned yet.<br>Browse to start protection.</div>
-  </div>
-  <div class="footer">
-    <button class="btn btn-primary" id="btn-open">Open Dashboard</button>
-    <button class="btn btn-secondary" id="btn-clear">Clear</button>
-  </div>
-
-  <script src="popup.js"></script>
+<div class="header">
+  <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+    <path d="M16 2L4 8v8c0 6.627 5.149 12.373 12 14 6.851-1.627 12-7.373 12-14V8L16 2z"
+          fill="#0A84FF" opacity="0.15" stroke="#0A84FF" stroke-width="1.5"/>
+    <rect x="9"  y="13" width="4" height="8" rx="1" fill="#12B76A"/>
+    <rect x="14" y="10" width="4" height="11" rx="1" fill="#0A84FF"/>
+    <rect x="19" y="15" width="4" height="6" rx="1" fill="#F04438"/>
+  </svg>
+  <span class="header-title">Spectra<span>Guard</span></span>
+</div>
+<div class="status-bar">
+  <span class="status-dot"></span>
+  <span id="status-text">Active — monitoring all URLs</span>
+</div>
+<div class="section-title">RECENT SCANS</div>
+<div id="scan-list"><div class="empty">No scans yet this session</div></div>
+<div class="footer">
+  <span id="scan-count" style="font-size:12px;color:#6B7280">0 scans today</span>
+  <a href="http://localhost:5173" target="_blank">Open Dashboard →</a>
+</div>
+<script src="popup.js"></script>
 </body>
 </html>

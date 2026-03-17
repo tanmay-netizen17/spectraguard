@@ -1,44 +1,33 @@
 {
-    "manifest_version": 3,
-    "name": "SentinelAI Shield",
-    "version": "1.0",
-    "description": "Real-time malicious URL detection and threat warnings powered by SentinelAI.",
-    "permissions": [
-        "webNavigation",
-        "tabs",
-        "storage",
-        "scripting",
-        "notifications",
-        "activeTab"
-    ],
-    "host_permissions": [
-        "<all_urls>"
-    ],
-    "background": {
-        "service_worker": "background.js"
-    },
-    "action": {
-        "default_popup": "popup/popup.html",
-        "default_icon": {
-            "16": "icons/icon16.png",
-            "48": "icons/icon48.png",
-            "128": "icons/icon128.png"
-        }
-    },
-    "icons": {
-        "16": "icons/icon16.png",
-        "48": "icons/icon48.png",
-        "128": "icons/icon128.png"
-    },
-    "content_scripts": [
-        {
-            "matches": [
-                "<all_urls>"
-            ],
-            "js": [
-                "content.js"
-            ],
-            "run_at": "document_idle"
-        }
-    ]
+  "manifest_version": 3,
+  "name": "SpectraGuard Shield",
+  "version": "1.0.4",
+  "description": "Real-time malicious URL detection by SpectraGuard",
+  "permissions": [
+    "webNavigation",
+    "tabs",
+    "storage",
+    "notifications",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16":  "icons/icon16.png",
+      "48":  "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
 }

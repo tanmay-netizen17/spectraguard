@@ -32,7 +32,7 @@ from utils.feedback_logger import FeedbackLogger
 from red_team.robustness_evaluator import RobustnessEvaluator
 from red_team.model_health import ModelHealthMonitor
 
-app = FastAPI(title="SentinelAI API", version="1.0.0")
+app = FastAPI(title="SpectraGuard API", version="1.0.0")
 
 # CORS setup for frontend
 app.add_middleware(
