@@ -1,5 +1,5 @@
 """
-SentinelAI — Anomaly Detector
+SpectraGuard — Anomaly Detector
 Uses Isolation Forest trained on auth/access log features.
 """
 

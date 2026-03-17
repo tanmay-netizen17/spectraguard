@@ -223,7 +223,7 @@ function AgentConfigPanel({ name }) {
           <li>Click <strong>Load unpacked</strong> → select <code style={{ fontFamily:'var(--font-mono)',
               fontSize:12, background:'var(--bg-sunken)', padding:'1px 6px', borderRadius:4 }}>
               browser-extension/</code> folder</li>
-          <li>SentinelAI Shield icon will appear in your toolbar</li>
+          <li>SpectraGuard Shield icon will appear in your toolbar</li>
         </ol>
         <div style={{ marginTop:12, padding:'8px 12px', background:'var(--bg-sunken)',
                       borderRadius:8, fontFamily:'var(--font-mono)', fontSize:12 }}>

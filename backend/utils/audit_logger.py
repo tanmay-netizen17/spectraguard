@@ -1,5 +1,5 @@
 """
-SentinelAI - Audit Logger
+SpectraGuard - Audit Logger
 Records all security-relevant events for compliance.
 """
 import json

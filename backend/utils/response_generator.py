@@ -1,5 +1,5 @@
 """
-SentinelAI - Response Generator
+SpectraGuard - Response Generator
 Generates specific recommended actions based on score and threat type.
 """
 

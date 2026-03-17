@@ -1,5 +1,5 @@
 """
-SentinelAI - URL Detector
+SpectraGuard - URL Detector
 Detects malicious URLs using TLD analysis, entropy, and brand impersonation.
 """
 

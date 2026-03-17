@@ -1,6 +1,6 @@
 # pyre-ignore-all-errors
 """
-SentinelAI - Unified Threat Intelligence Platform
+SpectraGuard - Unified Threat Intelligence Platform
 (Hackathon MVP - Backend)
 """
 

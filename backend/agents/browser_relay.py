@@ -1,5 +1,5 @@
 """
-SentinelAI - Browser Relay
+SpectraGuard - Browser Relay
 Bridges the Chrome extension to the backend multi-model engine.
 """
 import asyncio

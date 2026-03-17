@@ -1,5 +1,5 @@
 """
-SentinelAI - Fusion Engine
+SpectraGuard - Fusion Engine
 Combines detector scores and context signals into a single sentinel_score.
 """
 

@@ -1,5 +1,5 @@
 """
-SentinelAI - Advanced Phishing Simulator
+SpectraGuard - Advanced Phishing Simulator
 Crafts complex spear-phishing templates for red-team drills.
 """
 class AdvancedPhishSimulator:

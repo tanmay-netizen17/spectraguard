@@ -1,5 +1,5 @@
 """
-SentinelAI - Surge Detector
+SpectraGuard - Surge Detector
 Identifies sudden spikes in threat activity across the network.
 """
 from datetime import datetime, timedelta

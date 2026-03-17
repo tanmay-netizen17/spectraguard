@@ -1,5 +1,7 @@
 [URLDetector] [OK] LightGBM model loaded
-Loading weights:   0%|          | 0/41 [00:00<?, ?it/s]Loading weights: 100%|##########| 41/41 [00:00<00:00, 7918.15it/s]
+
+Loading weights:   0%|          | 0/41 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 41/41 [00:00<00:00, 7918.15it/s]
 [1mBertForSequenceClassification LOAD REPORT[0m from: mrm8488/bert-tiny-finetuned-sms-spam-detection
 Key                          | Status     |  | 
 -----------------------------+------------+--+-
@@ -7,11 +9,13 @@ bert.embeddings.position_ids | UNEXPECTED |  |
 
 [3mNotes:
 - UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
-INFO:     Will watch for changes in these directories: ['C:\\Users\\tanmay\\Documents\\hackathon\\sentinelai\\backend']
+INFO:     Will watch for changes in these directories: ['C:\\Users\\tanmay\\Documents\\hackathon\\spectraguard\\backend']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 INFO:     Started reloader process [16220] using WatchFiles
 [URLDetector] [OK] LightGBM model loaded
-Loading weights:   0%|          | 0/41 [00:00<?, ?it/s]Loading weights: 100%|##########| 41/41 [00:00<00:00, 7789.04it/s]
+
+Loading weights:   0%|          | 0/41 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 41/41 [00:00<00:00, 7789.04it/s]
 [1mBertForSequenceClassification LOAD REPORT[0m from: mrm8488/bert-tiny-finetuned-sms-spam-detection
 Key                          | Status     |  | 
 -----------------------------+------------+--+-
@@ -19,7 +23,9 @@ bert.embeddings.position_ids | UNEXPECTED |  |
 
 [3mNotes:
 - UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
-Loading weights:   0%|          | 0/41 [00:00<?, ?it/s]Loading weights: 100%|##########| 41/41 [00:00<00:00, 6445.52it/s]
+
+Loading weights:   0%|          | 0/41 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 41/41 [00:00<00:00, 6445.52it/s]
 [1mBertForSequenceClassification LOAD REPORT[0m from: mrm8488/bert-tiny-finetuned-sms-spam-detection
 Key                          | Status     |  | 
 -----------------------------+------------+--+-
@@ -54,11 +60,11 @@ WARNING:  WatchFiles detected changes in 'detectors\nlp_detector.py', 'main.py',
   File "<frozen runpy>", line 287, in run_path
   File "<frozen runpy>", line 98, in _run_module_code
   File "<frozen runpy>", line 88, in _run_code
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\main.py", line 26, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\main.py", line 26, in <module>
     from orchestrator import Orchestrator
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\orchestrator.py", line 12, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\orchestrator.py", line 12, in <module>
     from detectors.nlp_detector import NLPDetector
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\detectors\nlp_detector.py", line 19, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\detectors\nlp_detector.py", line 19, in <module>
     from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
   File "C:\Users\tanmay\AppData\Roaming\Python\Python314\site-packages\transformers\__init__.py", line 30, in <module>
     from . import dependency_versions_check
@@ -111,11 +117,11 @@ WARNING:  WatchFiles detected changes in 'detectors\deepfake_detector.py'. Reloa
   File "<frozen runpy>", line 287, in run_path
   File "<frozen runpy>", line 98, in _run_module_code
   File "<frozen runpy>", line 88, in _run_code
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\main.py", line 26, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\main.py", line 26, in <module>
     from orchestrator import Orchestrator
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\orchestrator.py", line 12, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\orchestrator.py", line 12, in <module>
     from detectors.nlp_detector import NLPDetector
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\detectors\nlp_detector.py", line 19, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\detectors\nlp_detector.py", line 19, in <module>
     from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
   File "<frozen importlib._bootstrap>", line 1423, in _handle_fromlist
   File "C:\Users\tanmay\AppData\Roaming\Python\Python314\site-packages\transformers\utils\import_utils.py", line 2096, in __getattr__
@@ -152,7 +158,9 @@ WARNING:  WatchFiles detected changes in 'detectors\deepfake_detector.py'. Reloa
     from scipy.linalg import _flapack
 KeyboardInterrupt
 [URLDetector] [OK] LightGBM model loaded
-Loading weights:   0%|          | 0/41 [00:00<?, ?it/s]Loading weights: 100%|##########| 41/41 [00:00<00:00, 7902.87it/s]
+
+Loading weights:   0%|          | 0/41 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 41/41 [00:00<00:00, 7902.87it/s]
 [1mBertForSequenceClassification LOAD REPORT[0m from: mrm8488/bert-tiny-finetuned-sms-spam-detection
 Key                          | Status     |  | 
 -----------------------------+------------+--+-
@@ -161,7 +169,9 @@ bert.embeddings.position_ids | UNEXPECTED |  |
 [3mNotes:
 - UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/41 [00:00<?, ?it/s]Loading weights: 100%|##########| 41/41 [00:00<00:00, 7790.81it/s]
+
+Loading weights:   0%|          | 0/41 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 41/41 [00:00<00:00, 7790.81it/s]
 [1mBertForSequenceClassification LOAD REPORT[0m from: mrm8488/bert-tiny-finetuned-sms-spam-detection
 Key                          | Status     |  | 
 -----------------------------+------------+--+-
@@ -196,11 +206,11 @@ WARNING:  WatchFiles detected changes in 'debug_server_pro.py', 'test_imports.py
   File "<frozen runpy>", line 287, in run_path
   File "<frozen runpy>", line 98, in _run_module_code
   File "<frozen runpy>", line 88, in _run_code
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\main.py", line 26, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\main.py", line 26, in <module>
     from orchestrator import Orchestrator
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\orchestrator.py", line 12, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\orchestrator.py", line 12, in <module>
     from detectors.nlp_detector import NLPDetector
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\detectors\nlp_detector.py", line 19, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\detectors\nlp_detector.py", line 19, in <module>
     from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
   File "C:\Users\tanmay\AppData\Roaming\Python\Python314\site-packages\transformers\__init__.py", line 30, in <module>
     from . import dependency_versions_check
@@ -235,8 +245,10 @@ KeyboardInterrupt
 INFO:     Started server process [1300]
 INFO:     Waiting for application startup.
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-[*] SentinelAI Backend starting up...
-Loading weights:   0%|          | 0/41 [00:00<?, ?it/s]Loading weights: 100%|##########| 41/41 [00:00<00:00, 3774.26it/s]
+[*] SpectraGuard Backend starting up...
+
+Loading weights:   0%|          | 0/41 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 41/41 [00:00<00:00, 3774.26it/s]
 [1mBertForSequenceClassification LOAD REPORT[0m from: mrm8488/bert-tiny-finetuned-sms-spam-detection
 Key                          | Status     |  | 
 -----------------------------+------------+--+-
@@ -270,11 +282,11 @@ WARNING:  WatchFiles detected changes in 'test_init.py', 'test_pydantic_only.py'
   File "<frozen runpy>", line 287, in run_path
   File "<frozen runpy>", line 98, in _run_module_code
   File "<frozen runpy>", line 88, in _run_code
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\main.py", line 26, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\main.py", line 26, in <module>
     from orchestrator import Orchestrator
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\orchestrator.py", line 12, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\orchestrator.py", line 12, in <module>
     from detectors.nlp_detector import NLPDetector
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\detectors\nlp_detector.py", line 19, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\detectors\nlp_detector.py", line 19, in <module>
     from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
   File "C:\Users\tanmay\AppData\Roaming\Python\Python314\site-packages\transformers\__init__.py", line 30, in <module>
     from . import dependency_versions_check
@@ -325,11 +337,11 @@ WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
   File "<frozen runpy>", line 287, in run_path
   File "<frozen runpy>", line 98, in _run_module_code
   File "<frozen runpy>", line 88, in _run_code
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\main.py", line 26, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\main.py", line 26, in <module>
     from orchestrator import Orchestrator
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\orchestrator.py", line 12, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\orchestrator.py", line 12, in <module>
     from detectors.nlp_detector import NLPDetector
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\detectors\nlp_detector.py", line 19, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\detectors\nlp_detector.py", line 19, in <module>
     from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
   File "<frozen importlib._bootstrap>", line 1423, in _handle_fromlist
   File "C:\Users\tanmay\AppData\Roaming\Python\Python314\site-packages\transformers\utils\import_utils.py", line 2096, in __getattr__
@@ -391,11 +403,11 @@ WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
   File "<frozen runpy>", line 287, in run_path
   File "<frozen runpy>", line 98, in _run_module_code
   File "<frozen runpy>", line 88, in _run_code
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\main.py", line 26, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\main.py", line 26, in <module>
     from orchestrator import Orchestrator
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\orchestrator.py", line 12, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\orchestrator.py", line 12, in <module>
     from detectors.nlp_detector import NLPDetector
-  File "C:\Users\tanmay\Documents\hackathon\sentinelai\backend\detectors\nlp_detector.py", line 19, in <module>
+  File "C:\Users\tanmay\Documents\hackathon\spectraguard\backend\detectors\nlp_detector.py", line 19, in <module>
     from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
   File "<frozen importlib._bootstrap>", line 1423, in _handle_fromlist
   File "C:\Users\tanmay\AppData\Roaming\Python\Python314\site-packages\transformers\utils\import_utils.py", line 2096, in __getattr__

@@ -1,5 +1,5 @@
 """
-SentinelAI - NLP Detector
+SpectraGuard - NLP Detector
 Handles:
   1. Phishing / spear-phishing email detection
   2. Prompt injection detection

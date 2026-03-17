@@ -146,7 +146,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
               fontFamily: 'var(--font-display, Syne, sans-serif)',
               fontWeight: 700, fontSize: 16, color: '#0D1117',
             }}>
-              SentinelAI
+              SpectraGuard
             </span>
           </div>
           {/* Mobile close button */}
@@ -201,7 +201,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
 
         {/* Version */}
         <div style={{ padding: '0 20px', fontSize: 11, color: '#9CA3AF', fontFamily: 'monospace' }}>
-          SentinelAI v1.0 · Build {new Date().toISOString().slice(0,10).replace(/-/g,'')}
+          SpectraGuard v1.0 · Build {new Date().toISOString().slice(0,10).replace(/-/g,'')}
         </div>
       </nav>
     </>

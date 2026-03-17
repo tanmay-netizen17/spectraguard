@@ -1,5 +1,5 @@
 """
-SentinelAI - Local Runner
+SpectraGuard - Local Runner
 Simulates local Edge/On-device inference using ONNX or lightweight heuristics.
 """
 

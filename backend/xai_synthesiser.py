@@ -1,5 +1,5 @@
 """
-SentinelAI - XAI Synthesiser
+SpectraGuard - XAI Synthesiser
 Generates human-readable evidence and threat briefs.
 """
 from typing import Dict, Any, List
@@ -7,7 +7,7 @@ from typing import Dict, Any, List
 class XAISynthesiser:
     def __init__(self):
         self.brief_templates = {
-            "CRITICAL": "SentinelAI has blocked this activity. {summary}",
+            "CRITICAL": "SpectraGuard has blocked this activity. {summary}",
             "HIGH": "High risk detected. {summary}",
             "MEDIUM": "Suspicious activity flagged. {summary}",
             "LOW": "Activity verified for normal patterns."

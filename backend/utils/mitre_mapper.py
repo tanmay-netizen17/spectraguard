@@ -1,5 +1,5 @@
 """
-SentinelAI - MITRE Mapper
+SpectraGuard - MITRE Mapper
 Maps identified threats to MITRE ATT&CK tactics and techniques.
 """
 
@@ -55,7 +55,7 @@ class MITREMapper:
             "tactic_id": "N/A",
             "tactic_name": "General Security",
             "phase": "Unknown",
-            "description": "General threat detected by SentinelAI multi-model engine.",
+            "description": "General threat detected by SpectraGuard multi-model engine.",
             "mitigations": ["Standard Security Controls", "Monitoring"]
         })
 

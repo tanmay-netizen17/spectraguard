@@ -26,7 +26,7 @@ export function useAlerts({ onAlert }) {
         if ('Notification' in window && Notification.permission === 'granted') {
           const severity = data.severity || 'Threat'
           const score    = data.score || 0
-          const notif    = new Notification(`🚨 SentinelAI — ${severity} Detected`, {
+          const notif    = new Notification(`🚨 SpectraGuard — ${severity} Detected`, {
             body: [
               `Score: ${score}/100`,
               data.from    ? `From: ${data.from.slice(0, 60)}`    : '',

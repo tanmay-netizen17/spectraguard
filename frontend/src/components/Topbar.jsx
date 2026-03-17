@@ -83,7 +83,7 @@ export default function Topbar({ onHamburgerClick, isMobile }) {
             fontFamily: 'var(--font-display, Syne, sans-serif)',
             fontWeight: 700, fontSize: 16, color: '#0D1117',
           }}>
-            SentinelAI
+            SpectraGuard
           </span>
         )}
       </div>

@@ -10,7 +10,7 @@
     "after_hours"
   ],
   "context_modifier_total": 0.04,
-  "threat_brief": "SentinelAI detected malicious URL with 26% confidence (Clean severity). Multiple threat indicators were identified. Treat with caution and verify with IT.",
+  "threat_brief": "SpectraGuard detected malicious URL with 26% confidence (Clean severity). Multiple threat indicators were identified. Treat with caution and verify with IT.",
   "evidence": {
     "url": {
       "score": 1.0,

@@ -1,5 +1,5 @@
 """
-SentinelAI - Feedback Logger
+SpectraGuard - Feedback Logger
 Collects user feedback on detection accuracy for future retraining.
 """
 import json

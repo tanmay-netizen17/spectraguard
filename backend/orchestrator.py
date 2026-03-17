@@ -1,6 +1,6 @@
 # pyre-ignore-all-errors
 """
-SentinelAI - Orchestrator
+SpectraGuard - Orchestrator
 Routes each incoming payload to the correct set of detectors (local or cloud),
 then fuses results and attaches XAI explanations.
 """
@@ -58,7 +58,7 @@ class Orchestrator:
         source: str = "manual",
     ) -> dict:
         """
-        Main entry point. Returns a full SentinelAI incident dict.
+        Main entry point. Returns a full SpectraGuard incident dict.
         """
         detector_results = {}
         tasks = []

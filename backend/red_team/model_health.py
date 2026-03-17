@@ -1,5 +1,5 @@
 """
-SentinelAI - Model Health Monitor
+SpectraGuard - Model Health Monitor
 Tracks drift and performance metrics for the ensemble.
 """
 class ModelHealthMonitor:

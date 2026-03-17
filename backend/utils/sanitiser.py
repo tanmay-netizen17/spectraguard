@@ -1,5 +1,5 @@
 """
-SentinelAI - Sanitiser
+SpectraGuard - Sanitiser
 Strips PII and malicious scripts from payloads before analysis.
 """
 import re

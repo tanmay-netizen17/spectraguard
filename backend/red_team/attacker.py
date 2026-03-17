@@ -1,5 +1,5 @@
 """
-SentinelAI - Red Team Attacker
+SpectraGuard - Red Team Attacker
 Generates adversarial payloads for robustness testing.
 """
 import re, random
